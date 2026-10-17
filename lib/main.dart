@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'models/adres.dart';
 import 'pages/detayli_adres_raporu.dart';
 import 'pages/ozet_adres_raporu.dart';
+import 'pages/tcmb_kur_arsivi.dart';
 import 'services/adres_deposu.dart';
 import 'utils/dogrulama.dart';
 
@@ -216,7 +217,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
               children: [
                 ListTile(title: const Text('Özet Adres Raporu'), contentPadding: const EdgeInsets.only(left: 50), onTap: () => _sayfayaGit(OzetAdresRaporu(kayitlar: List.unmodifiable(_kayitlar)))),
                 ListTile(title: const Text('Detaylı Adres Raporu'), contentPadding: const EdgeInsets.only(left: 50), onTap: () => _sayfayaGit(DetayliAdresRaporu(kayitlar: List.unmodifiable(_kayitlar)))),
-                ListTile(title: const Text('TCMB Kur Arşivi'), contentPadding: const EdgeInsets.only(left: 50), onTap: () {}),
+                ListTile(title: const Text('TCMB Kur Arşivi'), contentPadding: const EdgeInsets.only(left: 50), onTap: () => _sayfayaGit(const TcmbKurArsivi())),
               ],
             ),
           ],
