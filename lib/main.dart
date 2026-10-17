@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'models/adres.dart';
+import 'utils/dogrulama.dart';
 
 void main() {
   runApp(const KurumsalMobilApp());
@@ -44,6 +45,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
   final _telefonController = TextEditingController();
   final _epostaController = TextEditingController();
   final _kodFocus = FocusNode();
+  final _formKey = GlobalKey<FormState>();
   int? _seciliIndex;
 
   @override
@@ -68,7 +70,19 @@ class _AnaSayfaState extends State<AnaSayfa> {
     for (final c in [_kodController, _adController, _adresController, _sehirController, _telefonController, _epostaController]) {
       c.clear();
     }
+    _formKey.currentState?.reset();
     setState(() => _seciliIndex = null);
+  }
+
+  /// Kod başka bir kayıtta (seçili kayıt hariç) kullanılıyorsa hata döner.
+  String? _kodDogrula(String? deger) {
+    final zorunluHata = Dogrulama.zorunlu(deger, 'Kod');
+    if (zorunluHata != null) return zorunluHata;
+    final kod = deger!.trim();
+    for (var i = 0; i < _kayitlar.length; i++) {
+      if (i != _seciliIndex && _kayitlar[i].kod == kod) return 'Bu kod başka bir kayıtta kullanılıyor.';
+    }
+    return null;
   }
 
   void _kaydiSec(int index) {
@@ -82,17 +96,15 @@ class _AnaSayfaState extends State<AnaSayfa> {
     setState(() => _seciliIndex = index);
   }
 
-  /// Formdaki bilgilerden bir Adres oluşturur; Kod veya Ad boşsa uyarı gösterip null döner.
+  /// Formu doğrular ve bilgilerden bir Adres oluşturur; hatalı alan varsa uyarı gösterip null döner.
   Adres? _formdanAdres() {
-    final kod = _kodController.text.trim();
-    final ad = _adController.text.trim();
-    if (kod.isEmpty || ad.isEmpty) {
-      _mesajGoster('Kod ve Ad alanları boş bırakılamaz.', hata: true);
+    if (!_formKey.currentState!.validate()) {
+      _mesajGoster('Lütfen formdaki hatalı alanları düzeltin.', hata: true);
       return null;
     }
     return Adres(
-      kod: kod,
-      ad: ad,
+      kod: _kodController.text.trim(),
+      ad: _adController.text.trim(),
       adres: _adresController.text.trim(),
       sehir: _sehirController.text.trim(),
       telefon: _telefonController.text.trim(),
@@ -208,12 +220,19 @@ class _AnaSayfaState extends State<AnaSayfa> {
             const Row(children: [Icon(Icons.description_outlined, color: Colors.grey), SizedBox(width: 8), Text('ADRES ANA BİLGİLERİ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54))]),
             const Divider(),
             const SizedBox(height: 16),
-            _buildTextField('Kod', _kodController, focusNode: _kodFocus),
-            _buildTextField('Ad', _adController),
-            _buildTextField('Adres', _adresController, maxLines: 3),
-            _buildTextField('Şehir', _sehirController),
-            _buildTextField('Telefon', _telefonController, klavye: TextInputType.phone),
-            _buildTextField('E-posta', _epostaController, klavye: TextInputType.emailAddress),
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  _buildTextField('Kod *', _kodController, focusNode: _kodFocus, dogrula: _kodDogrula),
+                  _buildTextField('Ad *', _adController, dogrula: (d) => Dogrulama.zorunlu(d, 'Ad')),
+                  _buildTextField('Adres', _adresController, maxLines: 3),
+                  _buildTextField('Şehir', _sehirController),
+                  _buildTextField('Telefon', _telefonController, klavye: TextInputType.phone, dogrula: Dogrulama.telefon),
+                  _buildTextField('E-posta', _epostaController, klavye: TextInputType.emailAddress, dogrula: Dogrulama.eposta),
+                ],
+              ),
+            ),
             
             const SizedBox(height: 32),
             
@@ -271,12 +290,13 @@ class _AnaSayfaState extends State<AnaSayfa> {
     );
   }
 
-  Widget _buildTextField(String etiket, TextEditingController controller, {int maxLines = 1, TextInputType? klavye, FocusNode? focusNode}) {
+  Widget _buildTextField(String etiket, TextEditingController controller, {int maxLines = 1, TextInputType? klavye, FocusNode? focusNode, FormFieldValidator<String>? dogrula}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
         focusNode: focusNode,
+        validator: dogrula,
         maxLines: maxLines,
         keyboardType: klavye,
         decoration: InputDecoration(labelText: etiket, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)),
