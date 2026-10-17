@@ -45,6 +45,19 @@ class TcmbServisi {
     throw const KurAlinamadi('Seçilen tarih ve öncesindeki günler için kur bülteni bulunamadı.');
   }
 
+  /// [simdi] için en son açıklanan bültenden dolar ve euro döviz alış kurunu çeker.
+  Future<KurKaydi> guncelKurCek(DateTime simdi) async {
+    final bulten = await bultenGetir(simdi);
+    double alis(String kod) {
+      for (final k in bulten.kurlar) {
+        if (k.kod == kod && k.dovizAlis != null) return k.dovizAlis!;
+      }
+      throw KurAlinamadi('Bültende $kod kuru bulunamadı.');
+    }
+
+    return KurKaydi(cekimTarihi: simdi, bultenTarihi: bulten.tarih, usd: alis('USD'), eur: alis('EUR'));
+  }
+
   static KurBulteni bulteniCoz(String xmlMetni) {
     final kok = XmlDocument.parse(xmlMetni).rootElement;
     // Tarih özniteliği "16.10.2026" biçimindedir.

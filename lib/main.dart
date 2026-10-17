@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'pages/ana_sayfa.dart';
+import 'services/tcmb_servisi.dart';
 import 'tema.dart';
 
 void main() {
@@ -8,7 +9,10 @@ void main() {
 }
 
 class KurumsalMobilApp extends StatelessWidget {
-  const KurumsalMobilApp({super.key});
+  /// Testlerde gerçek TCMB'ye bağlanmamak için dışarıdan verilebilir.
+  final TcmbServisi? tcmbServisi;
+
+  const KurumsalMobilApp({super.key, this.tcmbServisi});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +20,7 @@ class KurumsalMobilApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Mega İş Çözümleri',
       theme: uygulamaTemasi,
-      home: const AnaSayfa(),
+      home: AnaSayfa(tcmbServisi: tcmbServisi),
     );
   }
 }

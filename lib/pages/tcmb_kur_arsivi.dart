@@ -1,166 +1,126 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/kur.dart';
-import '../services/tcmb_servisi.dart';
+import '../services/kur_arsivi_deposu.dart';
 import '../tema.dart';
 import '../utils/tarih.dart';
+import '../widgets/marka_basligi.dart';
+import '../widgets/tablo_paneli.dart';
 
-/// Seçilen tarihteki TCMB döviz kurlarını gösterir.
+/// "Güncel Kur Çek" ile alınan dolar/euro kurlarının arşivi (web sürümündeki TCMB Döviz Arşivi).
 class TcmbKurArsivi extends StatefulWidget {
-  final TcmbServisi? servis;
-
-  /// Sayfa açıldığında gösterilecek tarih; verilmezse bugün.
-  final DateTime? baslangicTarihi;
-
-  const TcmbKurArsivi({super.key, this.servis, this.baslangicTarihi});
+  const TcmbKurArsivi({super.key});
 
   @override
   State<TcmbKurArsivi> createState() => _TcmbKurArsiviState();
 }
 
 class _TcmbKurArsiviState extends State<TcmbKurArsivi> {
-  late final TcmbServisi _servis = widget.servis ?? TcmbServisi();
-  late DateTime _secilenTarih = widget.baslangicTarihi ?? DateTime.now();
-  KurBulteni? _bulten;
-  String? _hata;
-  bool _yukleniyor = false;
+  final _depo = KurArsiviDeposu();
+  List<KurKaydi>? _arsiv;
+  bool _otomatikAcik = false;
 
   @override
   void initState() {
     super.initState();
-    _getir();
+    _yukle();
   }
 
-  Future<void> _getir() async {
+  Future<void> _yukle() async {
+    final arsiv = await _depo.yukle();
+    final otomatik = await _depo.otomatikServisAcikMi();
+    if (!mounted) return;
     setState(() {
-      _yukleniyor = true;
-      _hata = null;
+      _arsiv = arsiv;
+      _otomatikAcik = otomatik;
     });
-    try {
-      final bulten = await _servis.bultenGetir(_secilenTarih);
-      if (!mounted) return;
-      setState(() => _bulten = bulten);
-    } on KurAlinamadi catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _bulten = null;
-        // Tarayıcıda TCMB, CORS başlığı göndermediği için istekler engellenir.
-        _hata = kIsWeb ? '$e\n\nNot: Tarayıcıda TCMB istekleri CORS nedeniyle engellenebilir; mobil cihazda deneyin.' : '$e';
-      });
-    } finally {
-      if (mounted) setState(() => _yukleniyor = false);
-    }
   }
 
-  Future<void> _tarihSec() async {
-    final tarih = await showDatePicker(
-      context: context,
-      initialDate: _secilenTarih,
-      firstDate: DateTime(1996, 4, 16),
-      lastDate: DateTime.now(),
-      helpText: 'Kur tarihi seçin',
-    );
-    if (tarih == null) return;
-    setState(() => _secilenTarih = tarih);
-    _getir();
+  Future<void> _otomatikDegistir() async {
+    final yeni = !_otomatikAcik;
+    await _depo.otomatikServisAyarla(yeni);
+    if (!mounted) return;
+    setState(() => _otomatikAcik = yeni);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(yeni
+            ? 'Otomatik kur servisi açıldı: uygulama her gün ilk açıldığında güncel kur çekilecek.'
+            : 'Otomatik kur servisi kapatıldı.'),
+      ));
   }
 
   @override
   Widget build(BuildContext context) {
+    final arsiv = _arsiv;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('TCMB Kur Arşivi'),
-      ),
-      body: ListView(
+      appBar: AppBar(title: const MarkaBasligi()),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _yukleniyor ? null : _tarihSec,
-                  icon: const Icon(Icons.calendar_today),
-                  label: Text(tarihYaz(_secilenTarih)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(onPressed: _yukleniyor ? null : _getir, icon: const Icon(Icons.refresh), tooltip: 'Yenile'),
-            ],
+        child: TabloPaneli(
+          baslik: 'TCMB Döviz Arşivi',
+          sagUst: OutlinedButton.icon(
+            onPressed: arsiv == null ? null : _otomatikDegistir,
+            icon: Icon(_otomatikAcik ? Icons.toggle_on : Icons.toggle_off, size: 22),
+            label: Text('Otomatik Kur Servisi: ${_otomatikAcik ? 'Açık' : 'Kapalı'}'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _otomatikAcik ? const Color(0xFF7EE2A8) : Colors.white70,
+              side: const BorderSide(color: Colors.white24),
+              backgroundColor: Colors.white.withValues(alpha: 0.06),
+            ),
           ),
-          const SizedBox(height: 16),
-          ..._icerik(),
+          altSol: const Text('TCMB arşiv kayıtları listelenmektedir.', style: TextStyle(fontSize: 12, color: Colors.black54)),
+          altSag: 'Listelenen Arşiv Kaydı: ${arsiv?.length ?? 0}',
+          child: switch (arsiv) {
+            null => const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
+            [] => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: Text('Henüz kur çekilmedi. Ana sayfadaki "Güncel Kur Çek" butonunu kullanın.')),
+              ),
+            _ => _tablo(arsiv),
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _tablo(List<KurKaydi> arsiv) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        headingRowColor: tabloBaslikRengi,
+        headingTextStyle: tabloBaslikYazisi,
+        columns: const [
+          DataColumn(label: Text('ÇEKİM TARİHİ')),
+          DataColumn(label: Text('ABD DOLARI (\$)'), numeric: true),
+          DataColumn(label: Text('EURO (€)'), numeric: true),
+          DataColumn(label: Text('DURUM')),
+        ],
+        rows: [
+          for (final k in arsiv)
+            DataRow(cells: [
+              DataCell(Text('${tarihYaz(k.cekimTarihi)} ${saatYaz(k.cekimTarihi)}:${k.cekimTarihi.second.toString().padLeft(2, '0')}')),
+              DataCell(Text(k.usd.toStringAsFixed(4), style: const TextStyle(color: Color(0xFF198754), fontWeight: FontWeight.bold))),
+              DataCell(Text(k.eur.toStringAsFixed(4), style: const TextStyle(color: Color(0xFF0D6EFD), fontWeight: FontWeight.bold))),
+              DataCell(_durum(k)),
+            ]),
         ],
       ),
     );
   }
 
-  List<Widget> _icerik() {
-    if (_yukleniyor) {
-      return const [Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))];
+  Widget _durum(KurKaydi k) {
+    if (k.durum == KurDurumu.gecmisIsGunu) {
+      return Text('${k.durum.aciklama} · ${tarihYaz(k.bultenTarihi)} bülteni');
     }
-    if (_hata != null) {
-      return [
-        Card(
-          color: Colors.red.shade50,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red),
-                const SizedBox(width: 12),
-                Expanded(child: Text(_hata!)),
-              ],
-            ),
-          ),
-        ),
-      ];
-    }
-    final bulten = _bulten;
-    if (bulten == null) return const [];
-
-    final secilenGun = DateTime(_secilenTarih.year, _secilenTarih.month, _secilenTarih.day);
-    return [
-      if (bulten.tarih != secilenGun)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text(
-            '${tarihYaz(secilenGun)} tarihinde kur yayımlanmadığı için ${tarihYaz(bulten.tarih)} tarihli bülten gösteriliyor.',
-            style: const TextStyle(color: Colors.orange),
-          ),
-        ),
-      Text('${tarihYaz(bulten.tarih)} tarihli bülten', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54)),
-      const Divider(),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: tabloBaslikRengi,
-          headingTextStyle: tabloBaslikYazisi,
-          columns: const [
-            DataColumn(label: Text('KOD')),
-            DataColumn(label: Text('DÖVİZ')),
-            DataColumn(label: Text('BİRİM'), numeric: true),
-            DataColumn(label: Text('DÖVİZ ALIŞ'), numeric: true),
-            DataColumn(label: Text('DÖVİZ SATIŞ'), numeric: true),
-            DataColumn(label: Text('EFEKTİF ALIŞ'), numeric: true),
-            DataColumn(label: Text('EFEKTİF SATIŞ'), numeric: true),
-          ],
-          rows: [
-            for (final k in bulten.kurlar)
-              DataRow(cells: [
-                DataCell(Text(k.kod, style: const TextStyle(fontWeight: FontWeight.bold))),
-                DataCell(Text(k.isim)),
-                DataCell(Text('${k.birim}')),
-                DataCell(Text(_sayiYaz(k.dovizAlis))),
-                DataCell(Text(_sayiYaz(k.dovizSatis))),
-                DataCell(Text(_sayiYaz(k.efektifAlis))),
-                DataCell(Text(_sayiYaz(k.efektifSatis))),
-              ]),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5EE),
+        border: Border.all(color: const Color(0xFFA3D9B8)),
+        borderRadius: BorderRadius.circular(20),
       ),
-    ];
+      child: Text('● ${k.durum.aciklama}', style: const TextStyle(color: Color(0xFF198754), fontWeight: FontWeight.w600)),
+    );
   }
-
-  String _sayiYaz(double? deger) => deger == null ? '-' : deger.toStringAsFixed(4);
 }

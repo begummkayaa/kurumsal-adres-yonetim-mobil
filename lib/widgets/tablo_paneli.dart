@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../tema.dart';
 
-/// Web sürümündeki liste kartı: koyu başlık çubuğu (başlık + arama), içerik ve alt bilgi satırı.
+/// Web sürümündeki liste kartı: koyu başlık çubuğu (başlık + arama veya bir buton), içerik ve alt bilgi satırı.
 class TabloPaneli extends StatelessWidget {
   final String baslik;
-  final TextEditingController aramaController;
+
+  /// Verilirse başlık çubuğunun sağında arama kutusu olur.
+  final TextEditingController? aramaController;
+
+  /// Arama yerine başlık çubuğunun sağında gösterilecek içerik (ör. bir buton).
+  final Widget? sagUst;
   final Widget child;
 
   /// Alt satırın solundaki içerik (ör. PDF butonu).
@@ -17,7 +22,8 @@ class TabloPaneli extends StatelessWidget {
   const TabloPaneli({
     super.key,
     required this.baslik,
-    required this.aramaController,
+    this.aramaController,
+    this.sagUst,
     required this.child,
     required this.altSag,
     this.altSol,
@@ -40,23 +46,26 @@ class TabloPaneli extends StatelessWidget {
       ),
     ]);
 
-    final aramaKutusu = SizedBox(
-      height: 38,
-      child: TextField(
-        key: const Key('tabloArama'),
-        controller: aramaController,
-        style: const TextStyle(color: Colors.white, fontSize: 13),
-        decoration: InputDecoration(
-          hintText: 'İsim veya Kod ara...',
-          hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
-          prefixIcon: const Icon(Icons.search, color: Colors.white54, size: 18),
-          filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.08),
-          contentPadding: EdgeInsets.zero,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-        ),
-      ),
-    );
+    final controller = aramaController;
+    final aramaKutusu = controller == null
+        ? null
+        : SizedBox(
+            height: 38,
+            child: TextField(
+              key: const Key('tabloArama'),
+              controller: controller,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'İsim veya Kod ara...',
+                hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54, size: 18),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.08),
+                contentPadding: EdgeInsets.zero,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+              ),
+            ),
+          );
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -68,12 +77,16 @@ class TabloPaneli extends StatelessWidget {
           Container(
             color: anaRenk,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            // Geniş ekranda başlık solda, arama sağda; dar ekranda alt alta.
-            child: LayoutBuilder(
-              builder: (context, kisit) => kisit.maxWidth < 520
-                  ? Column(children: [baslikSatiri, const SizedBox(height: 8), aramaKutusu])
-                  : Row(children: [Expanded(child: baslikSatiri), const SizedBox(width: 12), SizedBox(width: 240, child: aramaKutusu)]),
-            ),
+            // Geniş ekranda başlık solda, arama/buton sağda; dar ekranda alt alta.
+            child: LayoutBuilder(builder: (context, kisit) {
+              final dar = kisit.maxWidth < 520;
+              final sag = aramaKutusu == null ? sagUst : (dar ? aramaKutusu : SizedBox(width: 240, child: aramaKutusu));
+              if (sag == null) return baslikSatiri;
+              if (dar) {
+                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [baslikSatiri, const SizedBox(height: 8), sag]);
+              }
+              return Row(children: [Expanded(child: baslikSatiri), const SizedBox(width: 12), sag]);
+            }),
           ),
           child,
           const Divider(height: 1),

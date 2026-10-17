@@ -1,9 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/adres.dart';
 import '../services/adres_deposu.dart';
+import '../services/kur_arsivi_deposu.dart';
+import '../services/tcmb_servisi.dart';
 import '../tema.dart';
 import '../utils/dogrulama.dart';
+import '../utils/tarih.dart';
 import '../widgets/ana_menu.dart';
 import '../widgets/form_ogeleri.dart';
 import '../widgets/kayit_tablosu.dart';
@@ -14,7 +18,10 @@ enum _Yon { ilk, geri, ileri, son }
 
 /// Adres kayıtlarının eklendiği, güncellendiği ve silindiği ana ekran.
 class AnaSayfa extends StatefulWidget {
-  const AnaSayfa({super.key});
+  /// Testlerde gerçek TCMB'ye bağlanmamak için dışarıdan verilebilir.
+  final TcmbServisi? tcmbServisi;
+
+  const AnaSayfa({super.key, this.tcmbServisi});
 
   @override
   State<AnaSayfa> createState() => _AnaSayfaState();
@@ -22,6 +29,9 @@ class AnaSayfa extends StatefulWidget {
 
 class _AnaSayfaState extends State<AnaSayfa> {
   final _depo = AdresDeposu();
+  final _kurDeposu = KurArsiviDeposu();
+  late final _tcmb = widget.tcmbServisi ?? TcmbServisi();
+  bool _kurCekiliyor = false;
   List<Adres> _kayitlar = [];
   bool _yukleniyor = true;
 
@@ -59,6 +69,31 @@ class _AnaSayfaState extends State<AnaSayfa> {
       _kayitlar = kayitlar;
       _yukleniyor = false;
     });
+    await _otomatikKurServisi();
+  }
+
+  /// Otomatik kur servisi açıksa, o gün henüz kur çekilmediyse uygulama açılışında çeker.
+  Future<void> _otomatikKurServisi() async {
+    final simdi = DateTime.now();
+    if (await _kurDeposu.otomatikServisAcikMi() && !await _kurDeposu.bugunCekildiMi(simdi)) {
+      await _guncelKurCek();
+    }
+  }
+
+  /// TCMB'den güncel dolar/euro kurunu çekip TCMB Döviz Arşivi'ne ekler.
+  Future<void> _guncelKurCek() async {
+    setState(() => _kurCekiliyor = true);
+    try {
+      final kayit = await _tcmb.guncelKurCek(DateTime.now());
+      await _kurDeposu.ekle(kayit);
+      _mesajGoster('Güncel kur çekildi (${tarihYaz(kayit.bultenTarihi)} bülteni): '
+          'USD ${kayit.usd.toStringAsFixed(4)} · EUR ${kayit.eur.toStringAsFixed(4)}');
+    } on KurAlinamadi catch (e) {
+      // Tarayıcıda TCMB, CORS başlığı göndermediği için istekler engellenir.
+      _mesajGoster(kIsWeb ? '$e (Tarayıcıda TCMB istekleri CORS nedeniyle engellenebilir.)' : '$e', hata: true);
+    } finally {
+      if (mounted) setState(() => _kurCekiliyor = false);
+    }
   }
 
   @override
@@ -72,6 +107,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
   }
 
   void _mesajGoster(String mesaj, {bool hata = false}) {
+    if (!mounted) return; // ör. kur çekilirken sayfadan çıkıldıysa
     // Önceki mesaj kapanmadan yenisi gelirse (ör. art arda gezinme) beklemeden onu göster.
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -295,6 +331,13 @@ class _AnaSayfaState extends State<AnaSayfa> {
                         ikon: Icons.cleaning_services,
                         cerceveli: true,
                         onPressed: _formuBosalt,
+                      ),
+                      IslemButonu(
+                        metin: _kurCekiliyor ? 'Kur Çekiliyor...' : 'Güncel Kur Çek',
+                        renk: anaRenk,
+                        ikon: Icons.currency_exchange,
+                        cerceveli: true,
+                        onPressed: _kurCekiliyor ? () {} : _guncelKurCek,
                       ),
                     ]),
                   ],
