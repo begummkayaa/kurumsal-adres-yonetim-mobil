@@ -199,7 +199,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
                 _buildIslemButonu('Kaydet', Colors.green, Icons.save, _kaydet),
                 _buildIslemButonu('Güncelle', Colors.orange, Icons.edit, _guncelle),
                 _buildIslemButonu('Sil', Colors.red, Icons.delete, _sil),
-                _buildIslemButonu('Temizle', Colors.teal, Icons.cleaning_services, () {}),
+                _buildIslemButonu('Temizle', Colors.teal, Icons.cleaning_services, _formuBosalt),
               ],
             ),
             const SizedBox(height: 24),

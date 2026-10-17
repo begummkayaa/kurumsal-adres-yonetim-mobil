@@ -143,4 +143,23 @@ void main() {
 
     expect(find.text('Silmek için tablodan bir kayıt seçin.'), findsOneWidget);
   });
+
+  testWidgets('Temizle formu boşaltıyor ve seçimi kaldırıyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await tester.ensureVisible(find.text('KAYA YAZILIM'));
+    await tester.tap(find.text('KAYA YAZILIM'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Temizle'));
+    await tester.tap(find.text('Temizle'));
+    await tester.pump();
+
+    expect(find.descendant(of: find.byType(TextField), matching: find.text('KAYA YAZILIM')), findsNothing);
+
+    // Seçim kalktığı için Güncelle artık uyarı vermeli.
+    await tester.ensureVisible(find.text('Güncelle'));
+    await tester.tap(find.text('Güncelle'));
+    await tester.pump();
+    expect(find.text('Güncellemek için tablodan bir kayıt seçin.'), findsOneWidget);
+  });
 }
