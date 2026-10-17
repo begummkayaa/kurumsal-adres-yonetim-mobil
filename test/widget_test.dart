@@ -38,7 +38,8 @@ void main() {
 
     expect(find.text('MEGA İŞ ÇÖZÜMLERİ'), findsWidgets);
     expect(find.text('ADRES ANA BİLGİLERİ'), findsOneWidget);
-    expect(find.text('KAYIT LİSTESİ'), findsOneWidget);
+    expect(find.text('Kayıt Listesi'), findsOneWidget);
+    expect(find.text('Listelenen Kayıt Sayısı: 3'), findsOneWidget);
 
     for (final buton in ['Yeni Kayıt', 'Kaydet', 'Güncelle', 'Sil', 'Temizle']) {
       expect(find.text(buton), findsOneWidget);
@@ -262,14 +263,38 @@ void main() {
     expect(find.text('Güncellemek için tablodan bir kayıt seçin.'), findsOneWidget);
   });
 
+  testWidgets('Kayıt listesi web sürümündeki sütunları gösteriyor', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+    final tablo = find.byType(DataTable);
+
+    for (final baslik in [
+      'FİRMA KODU', 'FİRMA ÜNVANI', 'ADRES', 'SEMT / İLÇE', 'ŞEHİR', 'POSTA KODU', 'ÜLKE', //
+      'TELEFON', 'FAX', 'VERGİ DAİRESİ', 'VERGİ NO', 'E-POSTA ADRESİ', 'WEB SİTESİ',
+    ]) {
+      expect(find.descendant(of: tablo, matching: find.text(baslik)), findsOneWidget, reason: baslik);
+    }
+    expect(find.descendant(of: tablo, matching: find.text('Kozyatağı')), findsOneWidget);
+    expect(find.descendant(of: tablo, matching: find.text('Seç')), findsNWidgets(3));
+  });
+
+  testWidgets('Satırdaki Seç bağlantısı kaydı forma dolduruyor', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+
+    await tester.tap(find.text('Seç').at(1)); // KAYA YAZILIM
+    await tester.pump();
+
+    expect(find.descendant(of: find.byType(TextFormField), matching: find.text('24343434')), findsOneWidget);
+    expect(find.descendant(of: find.byType(TextFormField), matching: find.text('Hilalkent')), findsOneWidget);
+  });
+
   testWidgets('Arama tabloyu filtreliyor', (WidgetTester tester) async {
     await uygulamayiAc(tester);
     final tablo = find.byType(DataTable);
-    final arama = find.widgetWithText(TextField, 'Kayıtlarda ara');
+    final arama = find.byKey(const Key('tabloArama'));
 
     await tester.enterText(arama, 'elazığ');
     await tester.pump();
-    expect(find.text('2 / 3 kayıt'), findsOneWidget);
+    expect(find.text('Listelenen Kayıt Sayısı: 2'), findsOneWidget);
     expect(find.descendant(of: tablo, matching: find.text('MEGA İŞ ÇÖZÜMLERİ')), findsNothing);
 
     await tester.enterText(arama, 'istanbul');
@@ -285,7 +310,7 @@ void main() {
     await uygulamayiAc(tester);
 
     // Sadece FIRAT TEKNOLOJİ (listede 3. sırada) görünsün; tablodaki 1. satır olur.
-    await tester.enterText(find.widgetWithText(TextField, 'Kayıtlarda ara'), 'fırat');
+    await tester.enterText(find.byKey(const Key('tabloArama')), 'fırat');
     await tester.pump();
     await tester.ensureVisible(find.text('FIRAT TEKNOLOJİ'));
     await tester.tap(find.text('FIRAT TEKNOLOJİ'));
@@ -298,7 +323,7 @@ void main() {
     await tester.tap(find.text('Güncelle'));
     await tester.pump();
 
-    await tester.enterText(find.widgetWithText(TextField, 'Kayıtlarda ara'), '');
+    await tester.enterText(find.byKey(const Key('tabloArama')), '');
     await tester.pump();
     final tablo = find.byType(DataTable);
     expect(find.descendant(of: tablo, matching: find.text('Malatya')), findsOneWidget);

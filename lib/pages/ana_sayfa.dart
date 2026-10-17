@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../models/adres.dart';
 import '../services/adres_deposu.dart';
 import '../utils/dogrulama.dart';
-import '../widgets/adres_tablosu.dart';
+import '../widgets/kayit_tablosu.dart';
 import '../widgets/ana_menu.dart';
 import '../widgets/form_ogeleri.dart';
+import '../widgets/tablo_paneli.dart';
 
 /// Adres kayıtlarının eklendiği, güncellendiği ve silindiği ana ekran.
 class AnaSayfa extends StatefulWidget {
@@ -29,6 +30,10 @@ class _AnaSayfaState extends State<AnaSayfa> {
   final _aramaController = TextEditingController();
 
   Iterable<TextEditingController> get _tumAlanlar => _alanlar.values;
+
+  /// Kayıt listesinde (web sürümündeki gibi) yetkililer dışındaki tüm alanlar gösterilir.
+  static final _listeSutunlari =
+      AdresAlani.values.where((a) => a != AdresAlani.yetkili1 && a != AdresAlani.yetkili2).toList();
 
   /// Aramaya uyan kayıtların [_kayitlar] içindeki sıraları.
   List<int> get _gorunenIndeksler => [
@@ -241,30 +246,23 @@ class _AnaSayfaState extends State<AnaSayfa> {
             Form(key: _formKey, child: _form()),
             const SizedBox(height: 32),
 
-            const BolumBasligi(baslik: 'KAYIT LİSTESİ', ikon: Icons.list_alt),
-            TextField(
-              controller: _aramaController,
-              decoration: InputDecoration(
-                labelText: 'Kayıtlarda ara',
-                hintText: 'İsim, kod veya herhangi bir bilgi',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _aramaController.text.isEmpty
-                    ? null
-                    : IconButton(icon: const Icon(Icons.close), tooltip: 'Aramayı temizle', onPressed: _aramaController.clear),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-              ),
+            TabloPaneli(
+              baslik: 'Kayıt Listesi',
+              aramaController: _aramaController,
+              altSag: 'Listelenen Kayıt Sayısı: ${_gorunenIndeksler.length}',
+              child: _yukleniyor
+                  ? const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+                  : _gorunenIndeksler.isEmpty
+                      ? const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('Aramaya uyan kayıt yok.')))
+                      : KayitTablosu(
+                          kayitlar: _kayitlar,
+                          alanlar: _listeSutunlari,
+                          ozelBasliklar: const {AdresAlani.kod: 'FİRMA KODU', AdresAlani.ad: 'FİRMA ÜNVANI'},
+                          gosterilecekler: _gorunenIndeksler,
+                          seciliIndex: _seciliIndex,
+                          onSec: _kaydiSec,
+                        ),
             ),
-            const SizedBox(height: 8),
-            if (_yukleniyor)
-              const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
-            else ...[
-              Text('${_gorunenIndeksler.length} / ${_kayitlar.length} kayıt', style: const TextStyle(color: Colors.black54)),
-              const SizedBox(height: 8),
-              if (_gorunenIndeksler.isEmpty)
-                const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('Aramaya uyan kayıt yok.')))
-              else
-                AdresTablosu(kayitlar: _kayitlar, gosterilecekler: _gorunenIndeksler, seciliIndex: _seciliIndex, onSec: _kaydiSec),
-            ],
             const SizedBox(height: 40),
           ],
         ),
