@@ -96,7 +96,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(const Color(0xFF0F172A)),
+                headingRowColor: WidgetStateProperty.all(const Color(0xFF0F172A)),
                 headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 dataRowMinHeight: 60,
                 dataRowMaxHeight: 60,
