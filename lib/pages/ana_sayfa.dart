@@ -295,7 +295,8 @@ class _AnaSayfaState extends State<AnaSayfa> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          // Kartlar web sürümündeki gibi sayfa genişliğinde.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Card(
               margin: EdgeInsets.zero,

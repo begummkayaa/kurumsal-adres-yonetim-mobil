@@ -96,7 +96,12 @@ class BolumBasligi extends StatelessWidget {
           // Dar ekranda başlık ve sağdaki açıklama taşmak yerine alt satıra geçer.
           Expanded(child: Text(baslik, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54))),
           if (sag != null)
-            Flexible(child: Text(sag!, textAlign: TextAlign.end, style: const TextStyle(fontSize: 12, color: Colors.black54))),
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(sag!, textAlign: TextAlign.end, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ),
+            ),
         ]),
         const Divider(),
         const SizedBox(height: 16),

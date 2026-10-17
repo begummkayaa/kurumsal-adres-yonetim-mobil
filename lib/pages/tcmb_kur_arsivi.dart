@@ -4,6 +4,7 @@ import '../models/kur.dart';
 import '../services/kur_arsivi_deposu.dart';
 import '../tema.dart';
 import '../utils/tarih.dart';
+import '../widgets/kayit_tablosu.dart';
 import '../widgets/marka_basligi.dart';
 import '../widgets/tablo_paneli.dart';
 
@@ -85,9 +86,8 @@ class _TcmbKurArsiviState extends State<TcmbKurArsivi> {
   }
 
   Widget _tablo(List<KurKaydi> arsiv) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
+    return PaneleYayilanTablo(
+      tablo: DataTable(
         headingRowColor: tabloBaslikRengi,
         headingTextStyle: tabloBaslikYazisi,
         columns: const [
@@ -120,7 +120,11 @@ class _TcmbKurArsiviState extends State<TcmbKurArsivi> {
         border: Border.all(color: const Color(0xFFA3D9B8)),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text('● ${k.durum.aciklama}', style: const TextStyle(color: Color(0xFF198754), fontWeight: FontWeight.w600)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.circle, size: 8, color: Color(0xFF198754)),
+        const SizedBox(width: 6),
+        Text(k.durum.aciklama, style: const TextStyle(color: Color(0xFF198754), fontWeight: FontWeight.w600)),
+      ]),
     );
   }
 }

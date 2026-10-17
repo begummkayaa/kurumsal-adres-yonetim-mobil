@@ -35,9 +35,8 @@ class KayitTablosu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final secilebilir = onSec != null;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
+    return PaneleYayilanTablo(
+      tablo: DataTable(
         headingRowColor: tabloBaslikRengi,
         headingTextStyle: tabloBaslikYazisi,
         dataRowMinHeight: 52,
@@ -71,6 +70,24 @@ class KayitTablosu extends StatelessWidget {
               ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Tablo panelden darsa panelin genişliğine yayılır (başlık satırı sonuna kadar uzanır),
+/// genişse yatayda kaydırılır.
+class PaneleYayilanTablo extends StatelessWidget {
+  final DataTable tablo;
+
+  const PaneleYayilanTablo({super.key, required this.tablo});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, kisit) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(constraints: BoxConstraints(minWidth: kisit.maxWidth), child: tablo),
       ),
     );
   }
