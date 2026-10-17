@@ -34,4 +34,40 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'E-posta'), 'test@mega.com');
     expect(find.text('test@mega.com'), findsOneWidget);
   });
+
+  testWidgets('Kaydet formdaki bilgiyi tabloya ekliyor ve formu boşaltıyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await tester.enterText(find.widgetWithText(TextField, 'Kod'), '99999');
+    await tester.enterText(find.widgetWithText(TextField, 'Ad'), 'YENİ FİRMA');
+    await tester.enterText(find.widgetWithText(TextField, 'Şehir'), 'Ankara');
+    await tester.tap(find.text('Kaydet'));
+    await tester.pump();
+
+    expect(find.text('Kayıt eklendi.'), findsOneWidget);
+    expect(find.descendant(of: find.byType(DataTable), matching: find.text('YENİ FİRMA')), findsOneWidget);
+    expect(find.descendant(of: find.byType(DataTable), matching: find.text('Ankara')), findsOneWidget);
+    expect(find.descendant(of: find.byType(TextField), matching: find.text('YENİ FİRMA')), findsNothing);
+  });
+
+  testWidgets('Kod veya Ad boşsa Kaydet kayıt eklemiyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await tester.enterText(find.widgetWithText(TextField, 'Ad'), 'KODSUZ FİRMA');
+    await tester.tap(find.text('Kaydet'));
+    await tester.pump();
+
+    expect(find.text('Kod ve Ad alanları boş bırakılamaz.'), findsOneWidget);
+    expect(find.descendant(of: find.byType(DataTable), matching: find.text('KODSUZ FİRMA')), findsNothing);
+  });
+
+  testWidgets('Yeni Kayıt formu boşaltıyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await tester.enterText(find.widgetWithText(TextField, 'Ad'), 'SİLİNECEK');
+    await tester.tap(find.text('Yeni Kayıt'));
+    await tester.pump();
+
+    expect(find.text('SİLİNECEK'), findsNothing);
+  });
 }

@@ -43,6 +43,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
   final _sehirController = TextEditingController();
   final _telefonController = TextEditingController();
   final _epostaController = TextEditingController();
+  final _kodFocus = FocusNode();
 
   @override
   void dispose() {
@@ -52,7 +53,47 @@ class _AnaSayfaState extends State<AnaSayfa> {
     _sehirController.dispose();
     _telefonController.dispose();
     _epostaController.dispose();
+    _kodFocus.dispose();
     super.dispose();
+  }
+
+  void _mesajGoster(String mesaj, {bool hata = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mesaj), backgroundColor: hata ? Colors.red : Colors.green),
+    );
+  }
+
+  void _formuBosalt() {
+    for (final c in [_kodController, _adController, _adresController, _sehirController, _telefonController, _epostaController]) {
+      c.clear();
+    }
+  }
+
+  void _yeniKayit() {
+    _formuBosalt();
+    _kodFocus.requestFocus();
+  }
+
+  void _kaydet() {
+    final kod = _kodController.text.trim();
+    final ad = _adController.text.trim();
+    if (kod.isEmpty || ad.isEmpty) {
+      _mesajGoster('Kod ve Ad alanları boş bırakılamaz.', hata: true);
+      return;
+    }
+
+    setState(() {
+      _kayitlar.add(Adres(
+        kod: kod,
+        ad: ad,
+        adres: _adresController.text.trim(),
+        sehir: _sehirController.text.trim(),
+        telefon: _telefonController.text.trim(),
+        eposta: _epostaController.text.trim(),
+      ));
+    });
+    _formuBosalt();
+    _mesajGoster('Kayıt eklendi.');
   }
 
   @override
@@ -92,11 +133,11 @@ class _AnaSayfaState extends State<AnaSayfa> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                _buildIslemButonu('Yeni Kayıt', Colors.blue, Icons.add),
-                _buildIslemButonu('Kaydet', Colors.green, Icons.save),
-                _buildIslemButonu('Güncelle', Colors.orange, Icons.edit),
-                _buildIslemButonu('Sil', Colors.red, Icons.delete),
-                _buildIslemButonu('Temizle', Colors.teal, Icons.cleaning_services),
+                _buildIslemButonu('Yeni Kayıt', Colors.blue, Icons.add, _yeniKayit),
+                _buildIslemButonu('Kaydet', Colors.green, Icons.save, _kaydet),
+                _buildIslemButonu('Güncelle', Colors.orange, Icons.edit, () {}),
+                _buildIslemButonu('Sil', Colors.red, Icons.delete, () {}),
+                _buildIslemButonu('Temizle', Colors.teal, Icons.cleaning_services, () {}),
               ],
             ),
             const SizedBox(height: 24),
@@ -105,7 +146,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
             const Row(children: [Icon(Icons.description_outlined, color: Colors.grey), SizedBox(width: 8), Text('ADRES ANA BİLGİLERİ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54))]),
             const Divider(),
             const SizedBox(height: 16),
-            _buildTextField('Kod', _kodController),
+            _buildTextField('Kod', _kodController, focusNode: _kodFocus),
             _buildTextField('Ad', _adController),
             _buildTextField('Adres', _adresController, maxLines: 3),
             _buildTextField('Şehir', _sehirController),
@@ -152,21 +193,22 @@ class _AnaSayfaState extends State<AnaSayfa> {
     );
   }
 
-  Widget _buildIslemButonu(String metin, Color renk, IconData ikon) {
+  Widget _buildIslemButonu(String metin, Color renk, IconData ikon, VoidCallback onPressed) {
     return ActionChip(
       backgroundColor: renk,
       labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       avatar: Icon(ikon, color: Colors.white, size: 18),
       label: Text(metin),
-      onPressed: () {},
+      onPressed: onPressed,
     );
   }
 
-  Widget _buildTextField(String etiket, TextEditingController controller, {int maxLines = 1, TextInputType? klavye}) {
+  Widget _buildTextField(String etiket, TextEditingController controller, {int maxLines = 1, TextInputType? klavye, FocusNode? focusNode}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         maxLines: maxLines,
         keyboardType: klavye,
         decoration: InputDecoration(labelText: etiket, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)),
