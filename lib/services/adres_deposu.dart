@@ -10,9 +10,33 @@ class AdresDeposu {
 
   /// Uygulama ilk kez açıldığında gösterilen örnek kayıtlar.
   static const ornekKayitlar = [
-    Adres(kod: '0001.001', ad: 'MEGA İŞ ÇÖZÜMLERİ', sehir: 'İstanbul', telefon: '+90 216 210 00 10', eposta: 'mega@mega.com'),
-    Adres(kod: '24343434', ad: 'KAYA YAZILIM', sehir: 'Elazığ', telefon: '0212 392 32 22', eposta: 'kaya@gmail.com'),
-    Adres(kod: '56565656', ad: 'FIRAT TEKNOLOJİ', sehir: 'Elazığ', telefon: '0424 237 00 00', eposta: 'info@firat.edu.tr'),
+    Adres(
+      kod: '0001.001',
+      ad: 'MEGA İŞ ÇÖZÜMLERİ',
+      adres: 'İçerenköy Mah. Eski Üsküdar Cad. Erkut Sok. No: 7 Çetin Ceylan Sitesi B Blok D:8',
+      semt: 'Ataşehir',
+      sehir: 'İstanbul',
+      ulke: 'Türkiye',
+      postaKodu: '34752',
+      telefon: '+90 216 210 00 10',
+      fax: '258 68 94',
+      vergiDairesi: 'Kozyatağı',
+      vergiNo: '6130836324',
+      eposta: 'mega@mega.com',
+    ),
+    Adres(
+      kod: '24343434',
+      ad: 'KAYA YAZILIM',
+      adres: 'Cumhuriyet Mah. Fidanlı Sok.',
+      semt: 'Cumhuriyet',
+      sehir: 'Elazığ',
+      ulke: 'Türkiye',
+      postaKodu: '23000',
+      telefon: '0212 392 32 22',
+      vergiDairesi: 'Hilalkent',
+      eposta: 'kaya@gmail.com',
+    ),
+    Adres(kod: '56565656', ad: 'FIRAT TEKNOLOJİ', sehir: 'Elazığ', ulke: 'Türkiye', telefon: '0424 237 00 00', eposta: 'info@firat.edu.tr'),
   ];
 
   /// Kayıtlı listeyi okur; daha önce hiç kayıt yapılmadıysa örnek kayıtları döner.

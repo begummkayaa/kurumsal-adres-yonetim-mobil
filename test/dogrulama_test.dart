@@ -25,6 +25,39 @@ void main() {
     });
   });
 
+  group('fax', () {
+    test('kısa numaralar da geçer', () {
+      expect(Dogrulama.fax('258 68 94'), isNull);
+      expect(Dogrulama.fax('32 3232 32'), isNull);
+      expect(Dogrulama.fax(''), isNull);
+    });
+    test('harf içeremez', () => expect(Dogrulama.fax('258 abc'), isNotNull));
+  });
+
+  group('sadeceRakam', () {
+    test('rakamlar ve boş değer geçer', () {
+      expect(Dogrulama.sadeceRakam('34752', 'Posta Kodu'), isNull);
+      expect(Dogrulama.sadeceRakam('', 'Posta Kodu'), isNull);
+    });
+    test('harf veya boşluk hata verir', () {
+      expect(Dogrulama.sadeceRakam('34 752', 'Posta Kodu'), 'Posta Kodu yalnızca rakam içerebilir.');
+      expect(Dogrulama.sadeceRakam('61308A', 'Vergi No'), isNotNull);
+    });
+  });
+
+  group('webSitesi', () {
+    test('geçerli adresler', () {
+      for (final w in ['www.mega.com', 'https://www.nova.com/', 'http://mega.com.tr/iletisim', 'megaiscozum.com']) {
+        expect(Dogrulama.webSitesi(w), isNull, reason: w);
+      }
+    });
+    test('hatalı adresler', () {
+      for (final w in ['mega', 'www mega com', 'https://']) {
+        expect(Dogrulama.webSitesi(w), isNotNull, reason: w);
+      }
+    });
+  });
+
   group('eposta', () {
     test('boş bırakılabilir', () => expect(Dogrulama.eposta(''), isNull));
     test('geçerli adresler', () {

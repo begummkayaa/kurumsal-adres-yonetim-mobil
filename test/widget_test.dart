@@ -4,8 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mega_mobil_proje/main.dart';
 
-/// Uygulamayı açar ve kayıtların yüklenmesini bekler.
+/// Uygulamayı telefon genişliğinde (tek sütunlu form) ama uzun bir ekranda açar,
+/// böylece butonlar ve tablo kaydırmadan görünür; sonra kayıtların yüklenmesini bekler.
 Future<void> uygulamayiAc(WidgetTester tester) async {
+  tester.view.physicalSize = const Size(600, 3000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(const KurumsalMobilApp());
   await tester.pumpAndSettle();
 }
@@ -49,15 +53,55 @@ void main() {
     expect(find.text('Elazığ'), findsNWidgets(2));
   });
 
-  testWidgets('Formda E-posta dahil tüm alanlar var ve yazılabiliyor', (WidgetTester tester) async {
+  testWidgets('Formda web sürümündeki 15 alanın hepsi var ve yazılabiliyor', (WidgetTester tester) async {
     await uygulamayiAc(tester);
 
-    for (final alan in ['Kod *', 'Ad *', 'Adres', 'Şehir', 'Telefon', 'E-posta']) {
-      expect(find.widgetWithText(TextField, alan), findsOneWidget);
+    for (final alan in [
+      'Kod *', 'Ad *', 'Adres', 'Semt', 'Şehir', 'Ülke', 'Posta Kodu', //
+      'Telefon', 'Fax', 'Vergi Dairesi', 'Vergi No', 'Mail', 'Web Sitesi', 'Yetkili 1', 'Yetkili 2',
+    ]) {
+      expect(find.widgetWithText(TextField, alan), findsOneWidget, reason: alan);
     }
 
-    await tester.enterText(find.widgetWithText(TextField, 'E-posta'), 'test@mega.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Mail'), 'test@mega.com');
     expect(find.text('test@mega.com'), findsOneWidget);
+  });
+
+  testWidgets('Geniş ekranda form web sürümündeki gibi iki sütun', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+    final kodDar = tester.getTopLeft(find.widgetWithText(TextField, 'Kod *'));
+    final telefonDar = tester.getTopLeft(find.widgetWithText(TextField, 'Telefon'));
+    expect(telefonDar.dy, greaterThan(kodDar.dy), reason: 'Telefonda alanlar alt alta olmalı');
+
+    tester.view.physicalSize = const Size(1200, 3000);
+    await tester.pumpAndSettle();
+    final kodGenis = tester.getTopLeft(find.widgetWithText(TextField, 'Kod *'));
+    final telefonGenis = tester.getTopLeft(find.widgetWithText(TextField, 'Telefon'));
+    expect(telefonGenis.dy, kodGenis.dy, reason: 'Kod ve Telefon aynı satırda olmalı');
+    expect(telefonGenis.dx, greaterThan(kodGenis.dx));
+  });
+
+  testWidgets('Yeni alanlar kaydediliyor ve kayıt seçilince forma geri doluyor', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Kod *'), 'YENI1');
+    await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'YENİ ALANLI FİRMA');
+    await tester.enterText(find.widgetWithText(TextField, 'Vergi Dairesi'), 'Harput V.D.');
+    await tester.enterText(find.widgetWithText(TextField, 'Yetkili 2'), 'Ayşe Yılmaz');
+    await tester.ensureVisible(find.text('Kaydet'));
+    await tester.tap(find.text('Kaydet'));
+    await tester.pump();
+    expect(find.text('Kayıt eklendi.'), findsOneWidget);
+
+    // Uygulamayı kapatıp yeniden açınca kayıt tüm alanlarıyla geri gelmeli.
+    await tester.pumpWidget(const SizedBox());
+    await uygulamayiAc(tester);
+    await tester.ensureVisible(find.text('YENİ ALANLI FİRMA'));
+    await tester.tap(find.text('YENİ ALANLI FİRMA'));
+    await tester.pump();
+
+    expect(find.descendant(of: find.byType(TextFormField), matching: find.text('Harput V.D.')), findsOneWidget);
+    expect(find.descendant(of: find.byType(TextFormField), matching: find.text('Ayşe Yılmaz')), findsOneWidget);
   });
 
   testWidgets('Kaydet formdaki bilgiyi tabloya ekliyor ve formu boşaltıyor', (WidgetTester tester) async {
@@ -105,7 +149,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Kod *'), '77777');
     await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'HATALI FİRMA');
     await tester.enterText(find.widgetWithText(TextField, 'Telefon'), '123');
-    await tester.enterText(find.widgetWithText(TextField, 'E-posta'), 'mega.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Mail'), 'mega.com');
     await tester.ensureVisible(find.text('Kaydet'));
     await tester.tap(find.text('Kaydet'));
     await tester.pump();

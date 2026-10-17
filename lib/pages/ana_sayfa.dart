@@ -20,20 +20,15 @@ class _AnaSayfaState extends State<AnaSayfa> {
   List<Adres> _kayitlar = [];
   bool _yukleniyor = true;
 
-  final _kodController = TextEditingController();
-  final _adController = TextEditingController();
-  final _adresController = TextEditingController();
-  final _sehirController = TextEditingController();
-  final _telefonController = TextEditingController();
-  final _epostaController = TextEditingController();
+  /// Her form alanının controller'ı.
+  final _alanlar = {for (final a in AdresAlani.values) a: TextEditingController()};
   final _kodFocus = FocusNode();
   final _formKey = GlobalKey<FormState>();
   int? _seciliIndex;
 
   final _aramaController = TextEditingController();
 
-  List<TextEditingController> get _tumAlanlar =>
-      [_kodController, _adController, _adresController, _sehirController, _telefonController, _epostaController];
+  Iterable<TextEditingController> get _tumAlanlar => _alanlar.values;
 
   /// Aramaya uyan kayıtların [_kayitlar] içindeki sıraları.
   List<int> get _gorunenIndeksler => [
@@ -94,12 +89,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
 
   void _kaydiSec(int index) {
     final k = _kayitlar[index];
-    _kodController.text = k.kod;
-    _adController.text = k.ad;
-    _adresController.text = k.adres;
-    _sehirController.text = k.sehir;
-    _telefonController.text = k.telefon;
-    _epostaController.text = k.eposta;
+    _alanlar.forEach((alan, c) => c.text = k[alan]);
     setState(() => _seciliIndex = index);
   }
 
@@ -109,14 +99,55 @@ class _AnaSayfaState extends State<AnaSayfa> {
       _mesajGoster('Lütfen formdaki hatalı alanları düzeltin.', hata: true);
       return null;
     }
-    return Adres(
-      kod: _kodController.text.trim(),
-      ad: _adController.text.trim(),
-      adres: _adresController.text.trim(),
-      sehir: _sehirController.text.trim(),
-      telefon: _telefonController.text.trim(),
-      eposta: _epostaController.text.trim(),
+    return Adres.alanlardan(_alanlar.map((alan, c) => MapEntry(alan, c.text.trim())));
+  }
+
+  FormFieldValidator<String>? _dogrulayici(AdresAlani alan) => switch (alan) {
+        AdresAlani.kod => _kodDogrula,
+        AdresAlani.ad => (d) => Dogrulama.zorunlu(d, 'Ad'),
+        AdresAlani.telefon => Dogrulama.telefon,
+        AdresAlani.fax => Dogrulama.fax,
+        AdresAlani.postaKodu => (d) => Dogrulama.sadeceRakam(d, 'Posta Kodu'),
+        AdresAlani.vergiNo => (d) => Dogrulama.sadeceRakam(d, 'Vergi No'),
+        AdresAlani.eposta => Dogrulama.eposta,
+        AdresAlani.webSitesi => Dogrulama.webSitesi,
+        _ => null,
+      };
+
+  TextInputType? _klavye(AdresAlani alan) => switch (alan) {
+        AdresAlani.telefon || AdresAlani.fax => TextInputType.phone,
+        AdresAlani.postaKodu || AdresAlani.vergiNo => TextInputType.number,
+        AdresAlani.eposta => TextInputType.emailAddress,
+        AdresAlani.webSitesi => TextInputType.url,
+        _ => null,
+      };
+
+  Widget _formAlani(AdresAlani alan) {
+    final zorunlu = alan == AdresAlani.kod || alan == AdresAlani.ad;
+    return FormAlani(
+      etiket: zorunlu ? '${alan.etiket} *' : alan.etiket,
+      controller: _alanlar[alan]!,
+      focusNode: alan == AdresAlani.kod ? _kodFocus : null,
+      maxLines: alan == AdresAlani.adres ? 3 : 1,
+      klavye: _klavye(alan),
+      dogrula: _dogrulayici(alan),
     );
+  }
+
+  /// Web sürümündeki gibi: solda adres, sağda iletişim/vergi/yetkili bilgileri.
+  /// Dar ekranda (telefon) iki grup alt alta tek sütun olur.
+  Widget _form() {
+    const sol = [AdresAlani.kod, AdresAlani.ad, AdresAlani.adres, AdresAlani.semt, AdresAlani.sehir, AdresAlani.ulke, AdresAlani.postaKodu];
+    final sag = AdresAlani.values.where((a) => !sol.contains(a));
+    return LayoutBuilder(builder: (context, kisit) {
+      final solSutun = Column(children: [for (final a in sol) _formAlani(a)]);
+      final sagSutun = Column(children: [for (final a in sag) _formAlani(a)]);
+      if (kisit.maxWidth < 700) return Column(children: [solSutun, sagSutun]);
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [Expanded(child: solSutun), const SizedBox(width: 24), Expanded(child: sagSutun)],
+      );
+    });
   }
 
   void _yeniKayit() {
@@ -207,19 +238,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
             const SizedBox(height: 24),
 
             const BolumBasligi(baslik: 'ADRES ANA BİLGİLERİ', ikon: Icons.description_outlined),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  FormAlani(etiket: 'Kod *', controller: _kodController, focusNode: _kodFocus, dogrula: _kodDogrula),
-                  FormAlani(etiket: 'Ad *', controller: _adController, dogrula: (d) => Dogrulama.zorunlu(d, 'Ad')),
-                  FormAlani(etiket: 'Adres', controller: _adresController, maxLines: 3),
-                  FormAlani(etiket: 'Şehir', controller: _sehirController),
-                  FormAlani(etiket: 'Telefon', controller: _telefonController, klavye: TextInputType.phone, dogrula: Dogrulama.telefon),
-                  FormAlani(etiket: 'E-posta', controller: _epostaController, klavye: TextInputType.emailAddress, dogrula: Dogrulama.eposta),
-                ],
-              ),
-            ),
+            Form(key: _formKey, child: _form()),
             const SizedBox(height: 32),
 
             const BolumBasligi(baslik: 'KAYIT LİSTESİ', ikon: Icons.list_alt),
@@ -227,7 +246,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
               controller: _aramaController,
               decoration: InputDecoration(
                 labelText: 'Kayıtlarda ara',
-                hintText: 'Kod, ad, adres, şehir, telefon veya e-posta',
+                hintText: 'İsim, kod veya herhangi bir bilgi',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _aramaController.text.isEmpty
                     ? null
