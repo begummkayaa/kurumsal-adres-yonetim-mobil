@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'models/adres.dart';
+
 void main() {
   runApp(const KurumsalMobilApp());
 }
@@ -29,6 +31,12 @@ class AnaSayfa extends StatefulWidget {
 }
 
 class _AnaSayfaState extends State<AnaSayfa> {
+  final List<Adres> _kayitlar = [
+    const Adres(kod: '0001.001', ad: 'MEGA İŞ ÇÖZÜMLERİ', sehir: 'İstanbul', telefon: '+90 216 210 00 10', eposta: 'mega@mega.com'),
+    const Adres(kod: '24343434', ad: 'KAYA YAZILIM', sehir: 'Elazığ', telefon: '0212 392 32 22', eposta: 'kaya@gmail.com'),
+    const Adres(kod: '56565656', ad: 'FIRAT TEKNOLOJİ', sehir: 'Elazığ', telefon: '0424 237 00 00', eposta: 'info@firat.edu.tr'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,29 +115,15 @@ class _AnaSayfaState extends State<AnaSayfa> {
                   DataColumn(label: Text('TELEFON')),
                   DataColumn(label: Text('E-POSTA')),
                 ],
-                rows: const [
-                  DataRow(cells: [
-                    DataCell(Text('0001.001')),
-                    DataCell(Text('MEGA İŞ ÇÖZÜMLERİ')),
-                    DataCell(Text('İstanbul')),
-                    DataCell(Text('+90 216 210 00 10')),
-                    DataCell(Text('mega@mega.com')),
-                  ]),
-                  DataRow(cells: [
-                    DataCell(Text('24343434')),
-                    DataCell(Text('KAYA YAZILIM')),
-                    DataCell(Text('Elazığ')),
-                    DataCell(Text('0212 392 32 22')),
-                    DataCell(Text('kaya@gmail.com')),
-                  ]),
-                  DataRow(cells: [
-                    DataCell(Text('56565656')),
-                    DataCell(Text('FIRAT TEKNOLOJİ')),
-                    DataCell(Text('Elazığ')),
-                    DataCell(Text('0424 237 00 00')),
-                    DataCell(Text('info@firat.edu.tr')),
-                  ]),
-                ],
+                rows: _kayitlar
+                    .map((k) => DataRow(cells: [
+                          DataCell(Text(k.kod)),
+                          DataCell(Text(k.ad)),
+                          DataCell(Text(k.sehir)),
+                          DataCell(Text(k.telefon)),
+                          DataCell(Text(k.eposta)),
+                        ]))
+                    .toList(),
               ),
             ),
             const SizedBox(height: 40),

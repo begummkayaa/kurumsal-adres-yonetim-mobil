@@ -14,4 +14,12 @@ void main() {
       expect(find.text(buton), findsOneWidget);
     }
   });
+
+  testWidgets('Kayıt listesi tabloda gösteriliyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    expect(find.text('KAYA YAZILIM'), findsOneWidget);
+    expect(find.text('FIRAT TEKNOLOJİ'), findsOneWidget);
+    expect(find.text('Elazığ'), findsNWidgets(2));
+  });
 }
