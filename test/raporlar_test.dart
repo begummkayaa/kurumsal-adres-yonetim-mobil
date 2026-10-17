@@ -4,37 +4,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mega_mobil_proje/main.dart';
 import 'package:mega_mobil_proje/models/adres.dart';
-import 'package:mega_mobil_proje/pages/detayli_adres_raporu.dart';
-import 'package:mega_mobil_proje/pages/ozet_adres_raporu.dart';
+import 'package:mega_mobil_proje/pages/adres_raporu.dart';
 
 const _kayitlar = [
-  Adres(kod: 'A1', ad: 'ALFA', sehir: 'Elazığ', telefon: '0424 237 00 00'),
+  Adres(kod: 'A1', ad: 'ALFA', semt: 'Konak', sehir: 'İzmir', vergiNo: '1111111111', yetkili1: 'Ali Kaya'),
   Adres(kod: 'B2', ad: 'BETA', sehir: 'Elazığ', eposta: 'beta@mega.com'),
-  Adres(kod: 'C3', ad: 'GAMA', sehir: 'İstanbul'),
-  Adres(kod: 'D4', ad: 'DELTA'),
+  Adres(kod: 'C3', ad: 'GAMA', sehir: 'Elazığ'),
 ];
 
 Future<void> sayfayiAc(WidgetTester tester, Widget sayfa) async {
+  tester.view.physicalSize = const Size(1600, 1200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(MaterialApp(home: sayfa));
 }
 
-/// Özet kartındaki sayıyı, kartın başlığına göre bulur.
-Finder kartDegeri(String baslik, String deger) =>
-    find.descendant(of: find.widgetWithText(Card, baslik), matching: find.text(deger));
+Finder tablodaki(String metin) => find.descendant(of: find.byType(DataTable), matching: find.text(metin));
 
 void main() {
   group('Özet Adres Raporu', () {
-    testWidgets('toplamları ve şehir dağılımını gösteriyor', (tester) async {
+    testWidgets('web sürümündeki 7 sütunu gösteriyor', (tester) async {
       await sayfayiAc(tester, const OzetAdresRaporu(kayitlar: _kayitlar));
 
-      expect(kartDegeri('Toplam Kayıt', '4'), findsOneWidget);
-      expect(kartDegeri('Şehir Sayısı', '3'), findsOneWidget);
-      expect(kartDegeri('Telefonu Olan', '1'), findsOneWidget);
-      expect(kartDegeri('E-postası Olan', '1'), findsOneWidget);
-
-      expect(find.widgetWithText(ListTile, 'Elazığ'), findsOneWidget);
-      expect(find.descendant(of: find.widgetWithText(ListTile, 'Elazığ'), matching: find.text('2 kayıt')), findsOneWidget);
-      expect(find.widgetWithText(ListTile, 'Belirtilmemiş'), findsOneWidget);
+      for (final baslik in ['KOD', 'AD', 'ADRES', 'SEMT', 'ŞEHİR', 'TELEFON', 'E-POSTA ADRESİ']) {
+        expect(tablodaki(baslik), findsOneWidget, reason: baslik);
+      }
+      expect(tablodaki('VERGİ NO'), findsNothing);
+      expect(tablodaki('Konak'), findsOneWidget);
+      expect(find.text('Listelenen Kayıt Sayısı: 3'), findsOneWidget);
     });
 
     testWidgets('kayıt yoksa bilgi veriyor', (tester) async {
@@ -44,25 +41,27 @@ void main() {
   });
 
   group('Detaylı Adres Raporu', () {
-    testWidgets('tüm kayıtları listeliyor', (tester) async {
+    testWidgets('tüm alanları gösteriyor', (tester) async {
       await sayfayiAc(tester, const DetayliAdresRaporu(kayitlar: _kayitlar));
 
-      expect(find.text('4 kayıt listeleniyor'), findsOneWidget);
-      expect(find.text('ALFA'), findsOneWidget);
-      expect(find.text('Kod: B2'), findsOneWidget);
+      for (final baslik in ['VERGİ DAİRESİ', 'VERGİ NO', 'WEB SİTESİ', 'YETKİLİ 1', 'YETKİLİ 2']) {
+        expect(tablodaki(baslik), findsOneWidget, reason: baslik);
+      }
+      expect(tablodaki('1111111111'), findsOneWidget);
+      expect(tablodaki('Ali Kaya'), findsOneWidget);
     });
 
     testWidgets('aramaya göre filtreliyor', (tester) async {
       await sayfayiAc(tester, const DetayliAdresRaporu(kayitlar: _kayitlar));
 
-      await tester.enterText(find.byType(TextField), 'elazığ');
+      await tester.enterText(find.byKey(const Key('tabloArama')), 'elazığ');
       await tester.pump();
-      expect(find.text('2 kayıt listeleniyor'), findsOneWidget);
-      expect(find.text('GAMA'), findsNothing);
+      expect(find.text('Listelenen Kayıt Sayısı: 2'), findsOneWidget);
+      expect(tablodaki('ALFA'), findsNothing);
 
-      await tester.enterText(find.byType(TextField), 'yok böyle bir şey');
+      await tester.enterText(find.byKey(const Key('tabloArama')), 'yok böyle bir şey');
       await tester.pump();
-      expect(find.text('Eşleşen kayıt bulunamadı.'), findsOneWidget);
+      expect(find.text('Aramaya uyan kayıt yok.'), findsOneWidget);
     });
   });
 
@@ -75,10 +74,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Raporlar'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Özet Adres Raporu'));
+    await tester.tap(find.text('Detaylı Adres Raporu'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(OzetAdresRaporu), findsOneWidget);
-    expect(kartDegeri('Toplam Kayıt', '3'), findsOneWidget);
+    expect(find.byType(DetayliAdresRaporu), findsOneWidget);
+    expect(find.text('Listelenen Kayıt Sayısı: 3'), findsOneWidget);
   });
 }

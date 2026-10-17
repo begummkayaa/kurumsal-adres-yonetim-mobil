@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/adres.dart';
-import '../pages/detayli_adres_raporu.dart';
-import '../pages/ozet_adres_raporu.dart';
+import '../pages/adres_raporu.dart';
 import '../pages/tcmb_kur_arsivi.dart';
 import '../tema.dart';
 
