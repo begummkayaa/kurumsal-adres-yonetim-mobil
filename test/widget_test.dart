@@ -101,4 +101,46 @@ void main() {
 
     expect(find.text('Güncellemek için tablodan bir kayıt seçin.'), findsOneWidget);
   });
+
+  Future<void> kaydiSecVeSileBas(WidgetTester tester, String ad) async {
+    await tester.ensureVisible(find.text(ad));
+    await tester.tap(find.text(ad));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Sil'));
+    await tester.tap(find.text('Sil'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('Sil onaylanınca seçili kaydı siliyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await kaydiSecVeSileBas(tester, 'KAYA YAZILIM');
+    expect(find.text('Kaydı Sil'), findsOneWidget);
+
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Sil')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kayıt silindi.'), findsOneWidget);
+    expect(find.text('KAYA YAZILIM'), findsNothing);
+    expect(find.text('FIRAT TEKNOLOJİ'), findsOneWidget);
+  });
+
+  testWidgets('Sil iptal edilince kayıt kalıyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await kaydiSecVeSileBas(tester, 'KAYA YAZILIM');
+    await tester.tap(find.text('Vazgeç'));
+    await tester.pumpAndSettle();
+
+    expect(find.descendant(of: find.byType(DataTable), matching: find.text('KAYA YAZILIM')), findsOneWidget);
+  });
+
+  testWidgets('Kayıt seçilmeden Sil uyarı veriyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await tester.tap(find.text('Sil'));
+    await tester.pump();
+
+    expect(find.text('Silmek için tablodan bir kayıt seçin.'), findsOneWidget);
+  });
 }

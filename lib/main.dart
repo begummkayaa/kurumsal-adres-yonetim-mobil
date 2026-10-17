@@ -128,6 +128,36 @@ class _AnaSayfaState extends State<AnaSayfa> {
     _mesajGoster('Kayıt güncellendi.');
   }
 
+  Future<void> _sil() async {
+    final index = _seciliIndex;
+    if (index == null) {
+      _mesajGoster('Silmek için tablodan bir kayıt seçin.', hata: true);
+      return;
+    }
+    final kayit = _kayitlar[index];
+
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Kaydı Sil'),
+        content: Text('"${kayit.ad}" (${kayit.kod}) kaydı silinecek. Emin misiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Vazgeç')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+    if (onay != true || !mounted) return;
+
+    setState(() => _kayitlar.removeAt(index));
+    _formuBosalt();
+    _mesajGoster('Kayıt silindi.');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -168,7 +198,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
                 _buildIslemButonu('Yeni Kayıt', Colors.blue, Icons.add, _yeniKayit),
                 _buildIslemButonu('Kaydet', Colors.green, Icons.save, _kaydet),
                 _buildIslemButonu('Güncelle', Colors.orange, Icons.edit, _guncelle),
-                _buildIslemButonu('Sil', Colors.red, Icons.delete, () {}),
+                _buildIslemButonu('Sil', Colors.red, Icons.delete, _sil),
                 _buildIslemButonu('Temizle', Colors.teal, Icons.cleaning_services, () {}),
               ],
             ),
