@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mega_mobil_proje/main.dart';
@@ -21,5 +22,16 @@ void main() {
     expect(find.text('KAYA YAZILIM'), findsOneWidget);
     expect(find.text('FIRAT TEKNOLOJİ'), findsOneWidget);
     expect(find.text('Elazığ'), findsNWidgets(2));
+  });
+
+  testWidgets('Formda E-posta dahil tüm alanlar var ve yazılabiliyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    for (final alan in ['Kod', 'Ad', 'Adres', 'Şehir', 'Telefon', 'E-posta']) {
+      expect(find.widgetWithText(TextField, alan), findsOneWidget);
+    }
+
+    await tester.enterText(find.widgetWithText(TextField, 'E-posta'), 'test@mega.com');
+    expect(find.text('test@mega.com'), findsOneWidget);
   });
 }

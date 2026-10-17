@@ -37,6 +37,24 @@ class _AnaSayfaState extends State<AnaSayfa> {
     const Adres(kod: '56565656', ad: 'FIRAT TEKNOLOJİ', sehir: 'Elazığ', telefon: '0424 237 00 00', eposta: 'info@firat.edu.tr'),
   ];
 
+  final _kodController = TextEditingController();
+  final _adController = TextEditingController();
+  final _adresController = TextEditingController();
+  final _sehirController = TextEditingController();
+  final _telefonController = TextEditingController();
+  final _epostaController = TextEditingController();
+
+  @override
+  void dispose() {
+    _kodController.dispose();
+    _adController.dispose();
+    _adresController.dispose();
+    _sehirController.dispose();
+    _telefonController.dispose();
+    _epostaController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,11 +105,12 @@ class _AnaSayfaState extends State<AnaSayfa> {
             const Row(children: [Icon(Icons.description_outlined, color: Colors.grey), SizedBox(width: 8), Text('ADRES ANA BİLGİLERİ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54))]),
             const Divider(),
             const SizedBox(height: 16),
-            _buildTextField('Kod'),
-            _buildTextField('Ad'),
-            _buildTextField('Adres', maxLines: 3),
-            _buildTextField('Şehir'),
-            _buildTextField('Telefon'),
+            _buildTextField('Kod', _kodController),
+            _buildTextField('Ad', _adController),
+            _buildTextField('Adres', _adresController, maxLines: 3),
+            _buildTextField('Şehir', _sehirController),
+            _buildTextField('Telefon', _telefonController, klavye: TextInputType.phone),
+            _buildTextField('E-posta', _epostaController, klavye: TextInputType.emailAddress),
             
             const SizedBox(height: 32),
             
@@ -143,11 +162,13 @@ class _AnaSayfaState extends State<AnaSayfa> {
     );
   }
 
-  Widget _buildTextField(String etiket, {int maxLines = 1}) {
+  Widget _buildTextField(String etiket, TextEditingController controller, {int maxLines = 1, TextInputType? klavye}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextField(
+        controller: controller,
         maxLines: maxLines,
+        keyboardType: klavye,
         decoration: InputDecoration(labelText: etiket, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)),
       ),
     );
