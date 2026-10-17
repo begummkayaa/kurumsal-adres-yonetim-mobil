@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/kur.dart';
 import '../services/tcmb_servisi.dart';
 import '../tema.dart';
-
-String tarihYaz(DateTime t) =>
-    '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year}';
+import '../utils/tarih.dart';
 
 /// Seçilen tarihteki TCMB döviz kurlarını gösterir.
 class TcmbKurArsivi extends StatefulWidget {
