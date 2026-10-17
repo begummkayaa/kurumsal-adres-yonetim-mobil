@@ -1,3 +1,5 @@
+import '../utils/arama.dart' as arama;
+
 class Adres {
   final String kod;
   final String ad;
@@ -25,6 +27,9 @@ class Adres {
       eposta: json['eposta'] as String? ?? '',
     );
   }
+
+  /// Kod, ad, adres, şehir, telefon veya e-posta [metin]i içeriyorsa true döner.
+  bool aramayaUyar(String metin) => arama.aramayaUyar(metin, [kod, ad, adres, sehir, telefon, eposta]);
 
   Map<String, dynamic> toJson() => {
         'kod': kod,

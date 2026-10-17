@@ -30,12 +30,21 @@ class _AnaSayfaState extends State<AnaSayfa> {
   final _formKey = GlobalKey<FormState>();
   int? _seciliIndex;
 
+  final _aramaController = TextEditingController();
+
   List<TextEditingController> get _tumAlanlar =>
       [_kodController, _adController, _adresController, _sehirController, _telefonController, _epostaController];
+
+  /// Aramaya uyan kayıtların [_kayitlar] içindeki sıraları.
+  List<int> get _gorunenIndeksler => [
+        for (var i = 0; i < _kayitlar.length; i++)
+          if (_kayitlar[i].aramayaUyar(_aramaController.text)) i,
+      ];
 
   @override
   void initState() {
     super.initState();
+    _aramaController.addListener(() => setState(() {}));
     _kayitlariYukle();
   }
 
@@ -53,6 +62,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
     for (final c in _tumAlanlar) {
       c.dispose();
     }
+    _aramaController.dispose();
     _kodFocus.dispose();
     super.dispose();
   }
@@ -213,10 +223,29 @@ class _AnaSayfaState extends State<AnaSayfa> {
             const SizedBox(height: 32),
 
             const BolumBasligi(baslik: 'KAYIT LİSTESİ', ikon: Icons.list_alt),
+            TextField(
+              controller: _aramaController,
+              decoration: InputDecoration(
+                labelText: 'Kayıtlarda ara',
+                hintText: 'Kod, ad, adres, şehir, telefon veya e-posta',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _aramaController.text.isEmpty
+                    ? null
+                    : IconButton(icon: const Icon(Icons.close), tooltip: 'Aramayı temizle', onPressed: _aramaController.clear),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+              ),
+            ),
+            const SizedBox(height: 8),
             if (_yukleniyor)
               const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
-            else
-              AdresTablosu(kayitlar: _kayitlar, seciliIndex: _seciliIndex, onSec: _kaydiSec),
+            else ...[
+              Text('${_gorunenIndeksler.length} / ${_kayitlar.length} kayıt', style: const TextStyle(color: Colors.black54)),
+              const SizedBox(height: 8),
+              if (_gorunenIndeksler.isEmpty)
+                const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('Aramaya uyan kayıt yok.')))
+              else
+                AdresTablosu(kayitlar: _kayitlar, gosterilecekler: _gorunenIndeksler, seciliIndex: _seciliIndex, onSec: _kaydiSec),
+            ],
             const SizedBox(height: 40),
           ],
         ),

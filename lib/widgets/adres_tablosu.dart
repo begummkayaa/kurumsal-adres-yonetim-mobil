@@ -3,13 +3,23 @@ import 'package:flutter/material.dart';
 import '../models/adres.dart';
 import '../tema.dart';
 
-/// Kayıtları gösteren, yatayda kaydırılabilen tablo. Satıra tıklanınca [onSec] o satırın sırasıyla çağrılır.
+/// Kayıtları gösteren, yatayda kaydırılabilen tablo. Satıra tıklanınca [onSec],
+/// kaydın [kayitlar] içindeki sırasıyla çağrılır.
 class AdresTablosu extends StatelessWidget {
   final List<Adres> kayitlar;
+
+  /// Gösterilecek kayıtların [kayitlar] içindeki sıraları (ör. arama sonucu).
+  final List<int> gosterilecekler;
   final int? seciliIndex;
   final ValueChanged<int> onSec;
 
-  const AdresTablosu({super.key, required this.kayitlar, required this.seciliIndex, required this.onSec});
+  const AdresTablosu({
+    super.key,
+    required this.kayitlar,
+    required this.gosterilecekler,
+    required this.seciliIndex,
+    required this.onSec,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +39,7 @@ class AdresTablosu extends StatelessWidget {
           DataColumn(label: Text('E-POSTA')),
         ],
         rows: [
-          for (var i = 0; i < kayitlar.length; i++)
+          for (final i in gosterilecekler)
             DataRow(
               selected: i == seciliIndex,
               onSelectChanged: (_) => onSec(i),

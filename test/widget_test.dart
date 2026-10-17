@@ -217,4 +217,49 @@ void main() {
     await tester.pump();
     expect(find.text('Güncellemek için tablodan bir kayıt seçin.'), findsOneWidget);
   });
+
+  testWidgets('Arama tabloyu filtreliyor', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+    final tablo = find.byType(DataTable);
+    final arama = find.widgetWithText(TextField, 'Kayıtlarda ara');
+
+    await tester.enterText(arama, 'elazığ');
+    await tester.pump();
+    expect(find.text('2 / 3 kayıt'), findsOneWidget);
+    expect(find.descendant(of: tablo, matching: find.text('MEGA İŞ ÇÖZÜMLERİ')), findsNothing);
+
+    await tester.enterText(arama, 'istanbul');
+    await tester.pump();
+    expect(find.descendant(of: tablo, matching: find.text('MEGA İŞ ÇÖZÜMLERİ')), findsOneWidget);
+
+    await tester.enterText(arama, 'olmayan firma');
+    await tester.pump();
+    expect(find.text('Aramaya uyan kayıt yok.'), findsOneWidget);
+  });
+
+  testWidgets('Filtrelenmiş tablodan seçilen kayıt doğru güncelleniyor', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+
+    // Sadece FIRAT TEKNOLOJİ (listede 3. sırada) görünsün; tablodaki 1. satır olur.
+    await tester.enterText(find.widgetWithText(TextField, 'Kayıtlarda ara'), 'fırat');
+    await tester.pump();
+    await tester.ensureVisible(find.text('FIRAT TEKNOLOJİ'));
+    await tester.tap(find.text('FIRAT TEKNOLOJİ'));
+    await tester.pump();
+
+    expect(find.descendant(of: find.byType(TextFormField), matching: find.text('56565656')), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Şehir'), 'Malatya');
+    await tester.ensureVisible(find.text('Güncelle'));
+    await tester.tap(find.text('Güncelle'));
+    await tester.pump();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Kayıtlarda ara'), '');
+    await tester.pump();
+    final tablo = find.byType(DataTable);
+    expect(find.descendant(of: tablo, matching: find.text('Malatya')), findsOneWidget);
+    // Diğer kayıtların şehri değişmemiş olmalı.
+    expect(find.descendant(of: tablo, matching: find.text('İstanbul')), findsOneWidget);
+    expect(find.descendant(of: tablo, matching: find.text('Elazığ')), findsOneWidget);
+  });
 }

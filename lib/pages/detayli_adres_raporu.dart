@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/adres.dart';
 
-/// Tüm kayıtları bütün alanlarıyla listeler; kod, ad veya şehre göre aranabilir.
+/// Tüm kayıtları bütün alanlarıyla listeler; herhangi bir alana göre aranabilir.
 class DetayliAdresRaporu extends StatefulWidget {
   final List<Adres> kayitlar;
 
@@ -15,13 +15,7 @@ class DetayliAdresRaporu extends StatefulWidget {
 class _DetayliAdresRaporuState extends State<DetayliAdresRaporu> {
   String _arama = '';
 
-  List<Adres> get _filtrelenmis {
-    final arama = _arama.trim().toLowerCase();
-    if (arama.isEmpty) return widget.kayitlar;
-    return widget.kayitlar
-        .where((k) => [k.kod, k.ad, k.sehir].any((alan) => alan.toLowerCase().contains(arama)))
-        .toList();
-  }
+  List<Adres> get _filtrelenmis => widget.kayitlar.where((k) => k.aramayaUyar(_arama)).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +31,7 @@ class _DetayliAdresRaporuState extends State<DetayliAdresRaporu> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               decoration: InputDecoration(
-                labelText: 'Kod, ad veya şehir ara',
+                labelText: 'Kayıtlarda ara',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
