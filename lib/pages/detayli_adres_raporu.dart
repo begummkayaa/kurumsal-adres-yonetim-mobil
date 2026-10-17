@@ -30,8 +30,6 @@ class _DetayliAdresRaporuState extends State<DetayliAdresRaporu> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detaylı Adres Raporu'),
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [

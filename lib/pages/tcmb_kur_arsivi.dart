@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/kur.dart';
 import '../services/tcmb_servisi.dart';
+import '../tema.dart';
 
 String tarihYaz(DateTime t) =>
     '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year}';
@@ -72,8 +73,6 @@ class _TcmbKurArsiviState extends State<TcmbKurArsivi> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('TCMB Kur Arşivi'),
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -137,8 +136,8 @@ class _TcmbKurArsiviState extends State<TcmbKurArsivi> {
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          headingRowColor: WidgetStateProperty.all(const Color(0xFF0F172A)),
-          headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          headingRowColor: tabloBaslikRengi,
+          headingTextStyle: tabloBaslikYazisi,
           columns: const [
             DataColumn(label: Text('KOD')),
             DataColumn(label: Text('DÖVİZ')),

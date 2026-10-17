@@ -25,8 +25,6 @@ class OzetAdresRaporu extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Özet Adres Raporu'),
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
