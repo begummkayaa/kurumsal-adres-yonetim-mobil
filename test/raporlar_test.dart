@@ -6,6 +6,8 @@ import 'package:mega_mobil_proje/main.dart';
 import 'package:mega_mobil_proje/models/adres.dart';
 import 'package:mega_mobil_proje/pages/adres_raporu.dart';
 
+import 'sahte_api.dart';
+
 const _kayitlar = [
   Adres(kod: 'A1', ad: 'ALFA', semt: 'Konak', sehir: 'İzmir', vergiNo: '1111111111', yetkili1: 'Ali Kaya'),
   Adres(kod: 'B2', ad: 'BETA', sehir: 'Elazığ', eposta: 'beta@mega.com'),
@@ -67,7 +69,7 @@ void main() {
 
   testWidgets('Menüden raporlar açılıyor', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await tester.pumpWidget(KurumsalMobilApp(adresApi: SahteAdresSunucusu().api));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Open navigation menu'));

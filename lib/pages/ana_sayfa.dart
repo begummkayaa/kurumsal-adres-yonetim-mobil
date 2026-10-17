@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/adres.dart';
-import '../services/adres_deposu.dart';
+import '../services/adres_api.dart';
+import '../services/api_istemcisi.dart';
 import '../services/kur_arsivi_deposu.dart';
 import '../services/tcmb_servisi.dart';
 import '../tema.dart';
@@ -18,22 +19,27 @@ enum _Yon { ilk, geri, ileri, son }
 
 /// Adres kayıtlarının eklendiği, güncellendiği ve silindiği ana ekran.
 class AnaSayfa extends StatefulWidget {
-  /// Testlerde gerçek TCMB'ye bağlanmamak için dışarıdan verilebilir.
+  /// Testlerde gerçek API'ye ve TCMB'ye bağlanmamak için dışarıdan verilebilir.
+  final AdresApi? adresApi;
   final TcmbServisi? tcmbServisi;
 
-  const AnaSayfa({super.key, this.tcmbServisi});
+  const AnaSayfa({super.key, this.adresApi, this.tcmbServisi});
 
   @override
   State<AnaSayfa> createState() => _AnaSayfaState();
 }
 
 class _AnaSayfaState extends State<AnaSayfa> {
-  final _depo = AdresDeposu();
+  late final _adresApi = widget.adresApi ?? AdresApi();
   final _kurDeposu = KurArsiviDeposu();
   late final _tcmb = widget.tcmbServisi ?? TcmbServisi();
   bool _kurCekiliyor = false;
   List<Adres> _kayitlar = [];
   bool _yukleniyor = true;
+  String? _yuklemeHatasi;
+
+  /// Kaydet/Güncelle/Sil isteği sürerken ikinci kez basılmasın diye.
+  bool _islemSuruyor = false;
 
   /// Her form alanının controller'ı.
   final _alanlar = {for (final a in AdresAlani.values) a: TextEditingController()};
@@ -59,17 +65,43 @@ class _AnaSayfaState extends State<AnaSayfa> {
   void initState() {
     super.initState();
     _aramaController.addListener(() => setState(() {}));
-    _kayitlariYukle();
+    _kayitlariYukle().then((_) => _otomatikKurServisi());
   }
 
+  /// Kayıtları veritabanından (API) yeniden okur. Seçili kayıt hâlâ varsa seçili kalır.
   Future<void> _kayitlariYukle() async {
-    final kayitlar = await _depo.yukle();
-    if (!mounted) return;
+    final seciliId = _seciliIndex == null ? null : _kayitlar[_seciliIndex!].id;
     setState(() {
-      _kayitlar = kayitlar;
-      _yukleniyor = false;
+      _yukleniyor = true;
+      _yuklemeHatasi = null;
     });
-    await _otomatikKurServisi();
+    try {
+      final kayitlar = await _adresApi.listele();
+      if (!mounted) return;
+      final yeniIndex = kayitlar.indexWhere((k) => k.id == seciliId);
+      setState(() {
+        _kayitlar = kayitlar;
+        _seciliIndex = seciliId == null || yeniIndex == -1 ? null : yeniIndex;
+      });
+    } on ApiHatasi catch (e) {
+      if (!mounted) return;
+      setState(() => _yuklemeHatasi = e.mesaj);
+    } finally {
+      if (mounted) setState(() => _yukleniyor = false);
+    }
+  }
+
+  /// [islem] sürerken diğer işlemleri engeller; API hatasını kullanıcıya gösterir.
+  Future<void> _apiIslemi(Future<void> Function() islem) async {
+    if (_islemSuruyor) return;
+    setState(() => _islemSuruyor = true);
+    try {
+      await islem();
+    } on ApiHatasi catch (e) {
+      _mesajGoster(e.mesaj, hata: true);
+    } finally {
+      if (mounted) setState(() => _islemSuruyor = false);
+    }
   }
 
   /// Otomatik kur servisi açıksa, o gün henüz kur çekilmediyse uygulama açılışında çeker.
@@ -142,12 +174,12 @@ class _AnaSayfaState extends State<AnaSayfa> {
   }
 
   /// Formu doğrular ve bilgilerden bir Adres oluşturur; hatalı alan varsa uyarı gösterip null döner.
-  Adres? _formdanAdres() {
+  Adres? _formdanAdres({int? id}) {
     if (!_formKey.currentState!.validate()) {
       _mesajGoster('Lütfen formdaki hatalı alanları düzeltin.', hata: true);
       return null;
     }
-    return Adres.alanlardan(_alanlar.map((alan, c) => MapEntry(alan, c.text.trim())));
+    return Adres.alanlardan(_alanlar.map((alan, c) => MapEntry(alan, c.text.trim())), id: id);
   }
 
   FormFieldValidator<String>? _dogrulayici(AdresAlani alan) => switch (alan) {
@@ -179,6 +211,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
       maxLines: alan == AdresAlani.adres ? 3 : 1,
       klavye: _klavye(alan),
       dogrula: _dogrulayici(alan),
+      enFazla: alan.enFazla,
     );
   }
 
@@ -226,34 +259,73 @@ class _AnaSayfaState extends State<AnaSayfa> {
 
   Widget _butonGrubu(List<Widget> butonlar) => Wrap(spacing: 8, runSpacing: 8, children: butonlar);
 
+  Widget _listeIcerigi() {
+    if (_yukleniyor) {
+      return const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()));
+    }
+    if (_yuklemeHatasi != null) return _yuklemeHatasiKutusu(_yuklemeHatasi!);
+    if (_gorunenIndeksler.isEmpty) {
+      return const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('Aramaya uyan kayıt yok.')));
+    }
+    return KayitTablosu(
+      kayitlar: _kayitlar,
+      alanlar: _listeSutunlari,
+      ozelBasliklar: const {AdresAlani.kod: 'FİRMA KODU', AdresAlani.ad: 'FİRMA ÜNVANI'},
+      gosterilecekler: _gorunenIndeksler,
+      seciliIndex: _seciliIndex,
+      onSec: _kaydiSec,
+    );
+  }
+
+  Widget _yuklemeHatasiKutusu(String mesaj) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(children: [
+        const Icon(Icons.cloud_off, color: Colors.red, size: 36),
+        const SizedBox(height: 8),
+        Text('Kayıtlar yüklenemedi', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(mesaj, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54)),
+        const SizedBox(height: 12),
+        FilledButton.icon(onPressed: _kayitlariYukle, icon: const Icon(Icons.refresh), label: const Text('Tekrar Dene')),
+      ]),
+    );
+  }
+
   void _yeniKayit() {
     _formuBosalt();
     _kodFocus.requestFocus();
   }
 
-  void _kaydet() {
+  Future<void> _kaydet() async {
     final yeni = _formdanAdres();
     if (yeni == null) return;
 
-    setState(() => _kayitlar.add(yeni));
-    _depo.kaydet(_kayitlar);
-    _formuBosalt();
-    _mesajGoster('Kayıt eklendi.');
+    await _apiIslemi(() async {
+      final kaydedilen = await _adresApi.ekle(yeni);
+      if (!mounted) return;
+      setState(() => _kayitlar.add(kaydedilen));
+      _formuBosalt();
+      _mesajGoster('Kayıt eklendi.');
+    });
   }
 
-  void _guncelle() {
+  Future<void> _guncelle() async {
     final index = _seciliIndex;
     if (index == null) {
       _mesajGoster('Güncellemek için tablodan bir kayıt seçin.', hata: true);
       return;
     }
-    final guncel = _formdanAdres();
+    final guncel = _formdanAdres(id: _kayitlar[index].id);
     if (guncel == null) return;
 
-    setState(() => _kayitlar[index] = guncel);
-    _depo.kaydet(_kayitlar);
-    _formuBosalt();
-    _mesajGoster('Kayıt güncellendi.');
+    await _apiIslemi(() async {
+      final kaydedilen = await _adresApi.guncelle(guncel);
+      if (!mounted) return;
+      setState(() => _kayitlar[index] = kaydedilen);
+      _formuBosalt();
+      _mesajGoster('Kayıt güncellendi.');
+    });
   }
 
   Future<void> _sil() async {
@@ -281,16 +353,29 @@ class _AnaSayfaState extends State<AnaSayfa> {
     );
     if (onay != true || !mounted) return;
 
-    setState(() => _kayitlar.removeAt(index));
-    _depo.kaydet(_kayitlar);
-    _formuBosalt();
-    _mesajGoster('Kayıt silindi.');
+    await _apiIslemi(() async {
+      await _adresApi.sil(kayit.id!);
+      if (!mounted) return;
+      setState(() => _kayitlar.removeAt(index));
+      _formuBosalt();
+      _mesajGoster('Kayıt silindi.');
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const MarkaBasligi(), elevation: 0),
+      appBar: AppBar(
+        title: const MarkaBasligi(),
+        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: _yukleniyor ? null : _kayitlariYukle,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Kayıtları yenile',
+          ),
+        ],
+      ),
       drawer: AnaMenu(kayitlar: _kayitlar),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -368,18 +453,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
               baslik: 'Kayıt Listesi',
               aramaController: _aramaController,
               altSag: 'Listelenen Kayıt Sayısı: ${_gorunenIndeksler.length}',
-              child: _yukleniyor
-                  ? const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
-                  : _gorunenIndeksler.isEmpty
-                      ? const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('Aramaya uyan kayıt yok.')))
-                      : KayitTablosu(
-                          kayitlar: _kayitlar,
-                          alanlar: _listeSutunlari,
-                          ozelBasliklar: const {AdresAlani.kod: 'FİRMA KODU', AdresAlani.ad: 'FİRMA ÜNVANI'},
-                          gosterilecekler: _gorunenIndeksler,
-                          seciliIndex: _seciliIndex,
-                          onSec: _kaydiSec,
-                        ),
+              child: _listeIcerigi(),
             ),
             const SizedBox(height: 40),
           ],

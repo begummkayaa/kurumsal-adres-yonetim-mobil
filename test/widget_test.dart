@@ -4,21 +4,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mega_mobil_proje/main.dart';
 
+import 'sahte_api.dart';
+
+/// Her testin "veritabanı": örnek kayıtlarla başlayan sahte API sunucusu.
+late SahteAdresSunucusu sunucu;
+
 /// Uygulamayı telefon genişliğinde (tek sütunlu form) ama uzun bir ekranda açar,
 /// böylece butonlar ve tablo kaydırmadan görünür; sonra kayıtların yüklenmesini bekler.
 Future<void> uygulamayiAc(WidgetTester tester) async {
   tester.view.physicalSize = const Size(600, 3000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(const KurumsalMobilApp());
+  await tester.pumpWidget(KurumsalMobilApp(adresApi: sunucu.api));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  // Her test boş bir depoyla, yani örnek kayıtlarla başlar.
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    sunucu = SahteAdresSunucusu();
+    SharedPreferences.setMockInitialValues({});
+  });
 
-  testWidgets('Eklenen kayıt uygulama yeniden açılınca duruyor', (WidgetTester tester) async {
+  testWidgets('Eklenen kayıt veritabanına yazılıyor, uygulama yeniden açılınca geliyor', (WidgetTester tester) async {
     await uygulamayiAc(tester);
 
     await tester.enterText(find.widgetWithText(TextField, 'Kod *'), '88888');
@@ -412,6 +419,93 @@ void main() {
       expect(formdakiKod(tester), '24343434');
       await bas(tester, 'Son');
       expect(formdakiKod(tester), '56565656');
+    });
+  });
+
+  group('Veritabanı (API) bağlantısı', () {
+    Finder tablodaki(String metin) => find.descendant(of: find.byType(DataTable), matching: find.text(metin));
+
+    testWidgets('API kapalıysa hata ve Tekrar Dene gösteriliyor, açılınca kayıtlar geliyor', (WidgetTester tester) async {
+      sunucu.kapali = true;
+      await uygulamayiAc(tester);
+
+      expect(find.text('Kayıtlar yüklenemedi'), findsOneWidget);
+      expect(find.textContaining('Sunucuya ulaşılamadı'), findsOneWidget);
+
+      sunucu.kapali = false;
+      await tester.tap(find.text('Tekrar Dene'));
+      await tester.pumpAndSettle();
+      expect(tablodaki('KAYA YAZILIM'), findsOneWidget);
+    });
+
+    testWidgets('Yenile butonu başka yerden (web/masaüstü) eklenen kaydı getiriyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+      sunucu.kayitlar.add({'id': 50, 'kod': 'WEB1', 'ad': 'WEBDEN EKLENEN'});
+
+      await tester.tap(find.byTooltip('Kayıtları yenile'));
+      await tester.pumpAndSettle();
+      expect(tablodaki('WEBDEN EKLENEN'), findsOneWidget);
+    });
+
+    testWidgets('Kaydet, Güncelle ve Sil veritabanına yansıyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+
+      await tester.enterText(find.widgetWithText(TextField, 'Kod *'), 'YENI');
+      await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'YENİ FİRMA');
+      await tester.tap(find.text('Kaydet'));
+      await tester.pumpAndSettle();
+      final yeni = sunucu.kayitlar.singleWhere((k) => k['kod'] == 'YENI');
+      expect(yeni['id'], 4, reason: 'Veritabanının verdiği ID kullanılmalı');
+
+      await tester.tap(tablodaki('YENİ FİRMA'));
+      await tester.pump();
+      await tester.enterText(find.widgetWithText(TextField, 'Şehir'), 'Malatya');
+      await tester.tap(find.text('Güncelle'));
+      await tester.pumpAndSettle();
+      expect(sunucu.kayitlar.singleWhere((k) => k['id'] == 4)['sehir'], 'Malatya');
+
+      await tester.tap(tablodaki('YENİ FİRMA'));
+      await tester.pump();
+      await tester.tap(find.text('Sil'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Sil')));
+      await tester.pumpAndSettle();
+      expect(sunucu.kayitlar.any((k) => k['id'] == 4), isFalse);
+      expect(tablodaki('YENİ FİRMA'), findsNothing);
+    });
+
+    testWidgets('Sunucu kodu reddederse mesajı gösteriliyor ve tabloya eklenmiyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+      // Uygulama açıldıktan sonra başka biri aynı kodla kayıt eklemiş olsun.
+      sunucu.kayitlar.add({'id': 60, 'kod': 'CAKISMA', 'ad': 'BAŞKASI'});
+
+      await tester.enterText(find.widgetWithText(TextField, 'Kod *'), 'CAKISMA');
+      await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'BENİM FİRMAM');
+      await tester.tap(find.text('Kaydet'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("'CAKISMA' kodu başka bir kayıtta kullanılıyor."), findsOneWidget);
+      expect(tablodaki('BENİM FİRMAM'), findsNothing);
+    });
+
+    testWidgets('Bağlantı koparsa kayıt eklenmiyor, form korunuyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+      sunucu.kapali = true;
+
+      await tester.enterText(find.widgetWithText(TextField, 'Kod *'), 'KOPUK');
+      await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'KAYBOLMASIN');
+      await tester.tap(find.text('Kaydet'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Sunucuya ulaşılamadı'), findsOneWidget);
+      expect(tablodaki('KAYBOLMASIN'), findsNothing);
+      expect(find.descendant(of: find.byType(TextFormField), matching: find.text('KAYBOLMASIN')), findsOneWidget);
+    });
+
+    testWidgets('Alanlara veritabanı sınırından uzun yazılamıyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+      await tester.enterText(find.widgetWithText(TextField, 'Şehir'), 'ÇOKUZUNŞEHİRADIYİRMİKARAKTERİGEÇER');
+      expect(find.text('ÇOKUZUNŞEHİRADIYİRMİ'), findsOneWidget); // ilk 20 karakter
     });
   });
 }

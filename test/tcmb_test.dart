@@ -12,6 +12,8 @@ import 'package:mega_mobil_proje/pages/tcmb_kur_arsivi.dart';
 import 'package:mega_mobil_proje/services/kur_arsivi_deposu.dart';
 import 'package:mega_mobil_proje/services/tcmb_servisi.dart';
 
+import 'sahte_api.dart';
+
 /// 16.10.2026 tarihli gerçek TCMB bülteninden kısaltılmış örnek.
 const _ornekBulten = '''<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="isokur.xsl"?>
@@ -213,7 +215,7 @@ void main() {
       tester.view.physicalSize = const Size(1200, 3000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(KurumsalMobilApp(tcmbServisi: servis));
+      await tester.pumpWidget(KurumsalMobilApp(adresApi: SahteAdresSunucusu().api, tcmbServisi: servis));
       await tester.pumpAndSettle();
     }
 

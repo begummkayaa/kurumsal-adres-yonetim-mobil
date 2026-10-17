@@ -2,22 +2,23 @@ import '../utils/arama.dart' as arama;
 
 /// Bir adres kaydının alanları. Form, tablolar, raporlar ve PDF bu listeyi kullanır.
 /// [name], kayıtların cihazda saklandığı JSON anahtarıdır; değiştirilirse eski kayıtlar okunamaz.
+/// [name] aynı zamanda API'deki JSON alan adıdır.
 enum AdresAlani {
-  kod('Kod', 'KOD'),
-  ad('Ad', 'AD'),
-  adres('Adres', 'ADRES'),
-  semt('Semt', 'SEMT / İLÇE'),
-  sehir('Şehir', 'ŞEHİR'),
-  ulke('Ülke', 'ÜLKE'),
-  postaKodu('Posta Kodu', 'POSTA KODU'),
-  telefon('Telefon', 'TELEFON'),
-  fax('Fax', 'FAX'),
-  vergiDairesi('Vergi Dairesi', 'VERGİ DAİRESİ'),
-  vergiNo('Vergi No', 'VERGİ NO'),
-  eposta('Mail', 'E-POSTA ADRESİ'),
-  webSitesi('Web Sitesi', 'WEB SİTESİ'),
-  yetkili1('Yetkili 1', 'YETKİLİ 1'),
-  yetkili2('Yetkili 2', 'YETKİLİ 2');
+  kod('Kod', 'KOD', 20),
+  ad('Ad', 'AD', 150),
+  adres('Adres', 'ADRES', 250),
+  semt('Semt', 'SEMT / İLÇE', 20),
+  sehir('Şehir', 'ŞEHİR', 20),
+  ulke('Ülke', 'ÜLKE', 20),
+  postaKodu('Posta Kodu', 'POSTA KODU', 10),
+  telefon('Telefon', 'TELEFON', 40),
+  fax('Fax', 'FAX', 20),
+  vergiDairesi('Vergi Dairesi', 'VERGİ DAİRESİ', 25),
+  vergiNo('Vergi No', 'VERGİ NO', 20),
+  eposta('Mail', 'E-POSTA ADRESİ', 50),
+  webSitesi('Web Sitesi', 'WEB SİTESİ', 50),
+  yetkili1('Yetkili 1', 'YETKİLİ 1', 30),
+  yetkili2('Yetkili 2', 'YETKİLİ 2', 30);
 
   /// Formdaki etiket.
   final String etiket;
@@ -25,10 +26,15 @@ enum AdresAlani {
   /// Tablo sütun başlığı.
   final String baslik;
 
-  const AdresAlani(this.etiket, this.baslik);
+  /// Veritabanındaki (AdresAna) sütunun en fazla karakter sayısı.
+  final int enFazla;
+
+  const AdresAlani(this.etiket, this.baslik, this.enFazla);
 }
 
 class Adres {
+  /// Veritabanındaki ID; henüz kaydedilmemiş kayıtta null.
+  final int? id;
   final String kod;
   final String ad;
   final String adres;
@@ -46,6 +52,7 @@ class Adres {
   final String yetkili2;
 
   const Adres({
+    this.id,
     required this.kod,
     required this.ad,
     this.adres = '',
@@ -64,9 +71,10 @@ class Adres {
   });
 
   /// Alan -> değer eşlemesinden kayıt oluşturur; eksik alanlar boş kalır.
-  factory Adres.alanlardan(Map<AdresAlani, String> d) {
+  factory Adres.alanlardan(Map<AdresAlani, String> d, {int? id}) {
     String al(AdresAlani a) => d[a] ?? '';
     return Adres(
+      id: id,
       kod: al(AdresAlani.kod),
       ad: al(AdresAlani.ad),
       adres: al(AdresAlani.adres),
@@ -85,9 +93,11 @@ class Adres {
     );
   }
 
-  /// Eski sürümlerde kaydedilmiş, bazı alanları olmayan kayıtlar da okunabilir.
-  factory Adres.fromJson(Map<String, dynamic> json) =>
-      Adres.alanlardan({for (final a in AdresAlani.values) a: json[a.name] as String? ?? ''});
+  /// Veritabanında boş (null) olan alanlar boş metin olarak okunur.
+  factory Adres.fromJson(Map<String, dynamic> json) => Adres.alanlardan(
+        {for (final a in AdresAlani.values) a: json[a.name] as String? ?? ''},
+        id: json['id'] as int?,
+      );
 
   /// Verilen alanın değeri.
   String operator [](AdresAlani alan) => switch (alan) {
@@ -111,5 +121,8 @@ class Adres {
   /// Herhangi bir alan [metin]i içeriyorsa true döner.
   bool aramayaUyar(String metin) => arama.aramayaUyar(metin, AdresAlani.values.map((a) => this[a]));
 
-  Map<String, dynamic> toJson() => {for (final a in AdresAlani.values) a.name: this[a]};
+  Map<String, dynamic> toJson() => {
+        if (id != null) 'id': id,
+        for (final a in AdresAlani.values) a.name: this[a],
+      };
 }

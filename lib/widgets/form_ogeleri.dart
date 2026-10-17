@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Ana sayfadaki hap şeklindeki işlem butonu.
 /// Dolu (Kaydet, Sil, ...) ya da [cerceveli] (gezinme, Ekranı Temizle) olabilir.
@@ -46,6 +47,9 @@ class FormAlani extends StatelessWidget {
   final FocusNode? focusNode;
   final FormFieldValidator<String>? dogrula;
 
+  /// Verilirse bundan uzun metin yazılamaz (veritabanı sütun uzunluğu).
+  final int? enFazla;
+
   const FormAlani({
     super.key,
     required this.etiket,
@@ -54,6 +58,7 @@ class FormAlani extends StatelessWidget {
     this.klavye,
     this.focusNode,
     this.dogrula,
+    this.enFazla,
   });
 
   @override
@@ -66,6 +71,7 @@ class FormAlani extends StatelessWidget {
         validator: dogrula,
         maxLines: maxLines,
         keyboardType: klavye,
+        inputFormatters: [if (enFazla != null) LengthLimitingTextInputFormatter(enFazla)],
         decoration: InputDecoration(
           labelText: etiket,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
