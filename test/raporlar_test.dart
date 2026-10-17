@@ -69,7 +69,7 @@ void main() {
 
   testWidgets('Menüden raporlar açılıyor', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    await tester.pumpWidget(KurumsalMobilApp(adresApi: SahteAdresSunucusu().api));
+    await tester.pumpWidget(KurumsalMobilApp(adresApi: SahteAdresSunucusu().api, kurApi: SahteKurSunucusu().api));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Open navigation menu'));

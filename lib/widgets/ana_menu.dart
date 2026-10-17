@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import '../models/adres.dart';
 import '../pages/adres_raporu.dart';
 import '../pages/tcmb_kur_arsivi.dart';
+import '../services/kur_api.dart';
 import '../tema.dart';
 
 /// Soldan açılan menü: Ana Sayfa ve rapor sayfaları.
 class AnaMenu extends StatelessWidget {
   /// Raporlara gönderilecek güncel kayıt listesi.
   final List<Adres> kayitlar;
+  final KurApi kurApi;
 
-  const AnaMenu({super.key, required this.kayitlar});
+  const AnaMenu({super.key, required this.kayitlar, required this.kurApi});
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +47,7 @@ class AnaMenu extends StatelessWidget {
               ListTile(
                 title: const Text('TCMB Kur Arşivi'),
                 contentPadding: altMenuBoslugu,
-                onTap: () => sayfayaGit(const TcmbKurArsivi()),
+                onTap: () => sayfayaGit(TcmbKurArsivi(kurApi: kurApi)),
               ),
             ],
           ),

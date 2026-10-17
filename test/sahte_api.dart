@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:mega_mobil_proje/models/adres.dart';
 import 'package:mega_mobil_proje/services/adres_api.dart';
 import 'package:mega_mobil_proje/services/api_istemcisi.dart';
+import 'package:mega_mobil_proje/services/kur_api.dart';
 
 /// Testlerde kullanılan örnek kayıtlar (web sürümündeki verilerden).
 const ornekKayitlar = [
@@ -89,4 +90,40 @@ class SahteAdresSunucusu {
 
   static http.Response _json(Object veri, [int durum = 200]) =>
       http.Response.bytes(utf8.encode(jsonEncode(veri)), durum, headers: {'content-type': 'application/json; charset=utf-8'});
+}
+
+/// MegaApi'nin /api/kurlar uçlarını bellekte taklit eden sahte sunucu.
+class SahteKurSunucusu {
+  /// "DovizGecmisi" tablosu (en yeni en üstte, API'nin döndüğü gibi).
+  final List<Map<String, dynamic>> arsiv;
+
+  /// true ise her istek bağlantı hatası verir.
+  bool kapali;
+
+  /// Doluysa "Güncel Kur Çek" bu mesajla başarısız olur (ör. TCMB'ye ulaşılamadı).
+  String? tcmbHatasi;
+
+  /// "Güncel Kur Çek" isteği sayısı.
+  int cekimSayisi = 0;
+
+  SahteKurSunucusu({List<Map<String, dynamic>>? arsiv, this.kapali = false}) : arsiv = arsiv ?? [];
+
+  late final KurApi api = KurApi(ApiIstemcisi(client: MockClient(_cevapla), adres: 'http://sahte'));
+
+  Future<http.Response> _cevapla(http.Request istek) async {
+    if (kapali) throw http.ClientException('bağlantı reddedildi');
+    if (istek.method == 'GET') return SahteAdresSunucusu._json(arsiv);
+
+    cekimSayisi++;
+    if (tcmbHatasi != null) return SahteAdresSunucusu._json({'mesaj': tcmbHatasi}, 502);
+    final yeni = {
+      'id': arsiv.length + 1,
+      'tarih': DateTime.now().toIso8601String(),
+      'dolar': 49.5204,
+      'euro': 55.7014,
+      'durum': 'En Son Açıklanan Geçmiş İş Günü Kuru (15:30 Öncesi / Tatil Modu)',
+    };
+    arsiv.insert(0, yeni);
+    return SahteAdresSunucusu._json(yeni);
+  }
 }

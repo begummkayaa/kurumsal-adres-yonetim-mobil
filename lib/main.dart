@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'pages/ana_sayfa.dart';
 import 'services/adres_api.dart';
-import 'services/tcmb_servisi.dart';
+import 'services/kur_api.dart';
 import 'tema.dart';
 
 void main() {
@@ -10,11 +10,11 @@ void main() {
 }
 
 class KurumsalMobilApp extends StatelessWidget {
-  /// Testlerde gerçek API'ye ve TCMB'ye bağlanmamak için dışarıdan verilebilir.
+  /// Testlerde gerçek API'ye bağlanmamak için dışarıdan verilebilir.
   final AdresApi? adresApi;
-  final TcmbServisi? tcmbServisi;
+  final KurApi? kurApi;
 
-  const KurumsalMobilApp({super.key, this.adresApi, this.tcmbServisi});
+  const KurumsalMobilApp({super.key, this.adresApi, this.kurApi});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class KurumsalMobilApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Mega İş Çözümleri',
       theme: uygulamaTemasi,
-      home: AnaSayfa(adresApi: adresApi, tcmbServisi: tcmbServisi),
+      home: AnaSayfa(adresApi: adresApi, kurApi: kurApi),
     );
   }
 }

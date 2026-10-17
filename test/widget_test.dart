@@ -15,7 +15,7 @@ Future<void> uygulamayiAc(WidgetTester tester) async {
   tester.view.physicalSize = const Size(600, 3000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(KurumsalMobilApp(adresApi: sunucu.api));
+  await tester.pumpWidget(KurumsalMobilApp(adresApi: sunucu.api, kurApi: SahteKurSunucusu().api));
   await tester.pumpAndSettle();
 }
 
