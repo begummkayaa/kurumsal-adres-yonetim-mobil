@@ -25,8 +25,22 @@ class TabloPaneli extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baslikSatiri = Row(children: [
+      const Icon(Icons.menu, color: Colors.white, size: 18),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text.rich(
+          TextSpan(children: [
+            TextSpan(text: baslik, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const TextSpan(text: '  |  MEGA İŞ ÇÖZÜMLERİ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+          ]),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ]);
+
     final aramaKutusu = SizedBox(
-      width: 240,
       height: 38,
       child: TextField(
         key: const Key('tabloArama'),
@@ -54,30 +68,24 @@ class TabloPaneli extends StatelessWidget {
           Container(
             color: anaRenk,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.menu, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Text(baslik, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  const Text('  |  MEGA İŞ ÇÖZÜMLERİ', style: TextStyle(color: Colors.white54, fontSize: 12)),
-                ]),
-                aramaKutusu,
-              ],
+            // Geniş ekranda başlık solda, arama sağda; dar ekranda alt alta.
+            child: LayoutBuilder(
+              builder: (context, kisit) => kisit.maxWidth < 520
+                  ? Column(children: [baslikSatiri, const SizedBox(height: 8), aramaKutusu])
+                  : Row(children: [Expanded(child: baslikSatiri), const SizedBox(width: 12), SizedBox(width: 240, child: aramaKutusu)]),
             ),
           ),
           child,
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 ?altSol,
-                const Spacer(),
                 Text(altSag, style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),

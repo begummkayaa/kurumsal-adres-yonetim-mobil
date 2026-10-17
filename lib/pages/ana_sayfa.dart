@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../models/adres.dart';
 import '../services/adres_deposu.dart';
+import '../tema.dart';
 import '../utils/dogrulama.dart';
-import '../widgets/kayit_tablosu.dart';
 import '../widgets/ana_menu.dart';
 import '../widgets/form_ogeleri.dart';
+import '../widgets/kayit_tablosu.dart';
+import '../widgets/marka_basligi.dart';
 import '../widgets/tablo_paneli.dart';
+
+enum _Yon { ilk, geri, ileri, son }
 
 /// Adres kayıtlarının eklendiği, güncellendiği ve silindiği ana ekran.
 class AnaSayfa extends StatefulWidget {
@@ -68,7 +72,10 @@ class _AnaSayfaState extends State<AnaSayfa> {
   }
 
   void _mesajGoster(String mesaj, {bool hata = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    // Önceki mesaj kapanmadan yenisi gelirse (ör. art arda gezinme) beklemeden onu göster.
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
       SnackBar(content: Text(mesaj), backgroundColor: hata ? Colors.red : Colors.green),
     );
   }
@@ -155,6 +162,34 @@ class _AnaSayfaState extends State<AnaSayfa> {
     });
   }
 
+  /// İlk/Geri/İleri/Son: listede görünen (aramaya uyan) kayıtlar arasında gezinir.
+  void _gez(_Yon yon) {
+    final liste = _gorunenIndeksler;
+    if (liste.isEmpty) {
+      _mesajGoster('Listede gezinilecek kayıt yok.', hata: true);
+      return;
+    }
+    final simdiki = _seciliIndex == null ? -1 : liste.indexOf(_seciliIndex!);
+    final hedef = switch (yon) {
+      _Yon.ilk => 0,
+      _Yon.son => liste.length - 1,
+      // Seçim yoksa İleri ilk kayda, Geri son kayda gider.
+      _Yon.ileri => simdiki == -1 ? 0 : simdiki + 1,
+      _Yon.geri => simdiki == -1 ? liste.length - 1 : simdiki - 1,
+    };
+    if (hedef < 0) {
+      _mesajGoster('İlk kayıttasınız.');
+      return;
+    }
+    if (hedef >= liste.length) {
+      _mesajGoster('Son kayıttasınız.');
+      return;
+    }
+    _kaydiSec(liste[hedef]);
+  }
+
+  Widget _butonGrubu(List<Widget> butonlar) => Wrap(spacing: 8, runSpacing: 8, children: butonlar);
+
   void _yeniKayit() {
     _formuBosalt();
     _kodFocus.requestFocus();
@@ -219,31 +254,70 @@ class _AnaSayfaState extends State<AnaSayfa> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('MEGA İŞ ÇÖZÜMLERİ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const MarkaBasligi(), elevation: 0),
       drawer: AnaMenu(kayitlar: _kayitlar),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                IslemButonu(metin: 'Yeni Kayıt', renk: Colors.blue, ikon: Icons.add, onPressed: _yeniKayit),
-                IslemButonu(metin: 'Kaydet', renk: Colors.green, ikon: Icons.save, onPressed: _kaydet),
-                IslemButonu(metin: 'Güncelle', renk: Colors.orange, ikon: Icons.edit, onPressed: _guncelle),
-                IslemButonu(metin: 'Sil', renk: Colors.red, ikon: Icons.delete, onPressed: _sil),
-                IslemButonu(metin: 'Temizle', renk: Colors.teal, ikon: Icons.cleaning_services, onPressed: _formuBosalt),
-              ],
+            Card(
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Wrap(
+                  spacing: 24,
+                  runSpacing: 12,
+                  children: [
+                    _butonGrubu([
+                      IslemButonu(metin: 'Yeni Kayıt', renk: const Color(0xFF0D6EFD), ikon: Icons.add, onPressed: _yeniKayit),
+                      IslemButonu(metin: 'Kaydet', renk: const Color(0xFF198754), ikon: Icons.save, onPressed: _kaydet),
+                      IslemButonu(
+                        metin: 'Güncelle',
+                        renk: const Color(0xFFFFC107),
+                        yaziRengi: Colors.black87,
+                        ikon: Icons.edit,
+                        onPressed: _guncelle,
+                      ),
+                      IslemButonu(metin: 'Sil', renk: const Color(0xFFDC3545), ikon: Icons.delete, onPressed: _sil),
+                    ]),
+                    _butonGrubu([
+                      IslemButonu(metin: 'İlk', renk: anaRenk, ikon: Icons.first_page, cerceveli: true, onPressed: () => _gez(_Yon.ilk)),
+                      IslemButonu(metin: 'Geri', renk: anaRenk, ikon: Icons.chevron_left, cerceveli: true, onPressed: () => _gez(_Yon.geri)),
+                      IslemButonu(metin: 'İleri', renk: anaRenk, ikon: Icons.chevron_right, cerceveli: true, onPressed: () => _gez(_Yon.ileri)),
+                      IslemButonu(metin: 'Son', renk: anaRenk, ikon: Icons.last_page, cerceveli: true, onPressed: () => _gez(_Yon.son)),
+                    ]),
+                    _butonGrubu([
+                      IslemButonu(
+                        metin: 'Ekranı Temizle',
+                        renk: const Color(0xFF0D6EFD),
+                        ikon: Icons.cleaning_services,
+                        cerceveli: true,
+                        onPressed: _formuBosalt,
+                      ),
+                    ]),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 24),
 
-            const BolumBasligi(baslik: 'ADRES ANA BİLGİLERİ', ikon: Icons.description_outlined),
-            Form(key: _formKey, child: _form()),
+            Card(
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(children: [
+                  BolumBasligi(
+                    baslik: 'ADRES ANA BİLGİLERİ',
+                    ikon: Icons.description_outlined,
+                    sag: _seciliIndex == null ? 'Yeni Kayıt Girişi' : 'Aktif Kayıt Düzenleme',
+                  ),
+                  Form(key: _formKey, child: _form()),
+                ]),
+              ),
+            ),
             const SizedBox(height: 32),
 
             TabloPaneli(

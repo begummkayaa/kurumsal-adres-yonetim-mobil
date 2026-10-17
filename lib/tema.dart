@@ -5,7 +5,8 @@ const anaRenk = Color(0xFF0F172A);
 
 final uygulamaTemasi = ThemeData(
   primaryColor: anaRenk,
-  scaffoldBackgroundColor: Colors.white,
+  scaffoldBackgroundColor: const Color(0xFFF4F6F9),
+  cardTheme: const CardThemeData(color: Colors.white, surfaceTintColor: Colors.transparent, elevation: 1),
   appBarTheme: const AppBarTheme(backgroundColor: anaRenk, foregroundColor: Colors.white),
 );
 

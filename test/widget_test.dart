@@ -38,10 +38,10 @@ void main() {
 
     expect(find.text('MEGA İŞ ÇÖZÜMLERİ'), findsWidgets);
     expect(find.text('ADRES ANA BİLGİLERİ'), findsOneWidget);
-    expect(find.text('Kayıt Listesi'), findsOneWidget);
+    expect(find.textContaining('Kayıt Listesi', findRichText: true), findsOneWidget);
     expect(find.text('Listelenen Kayıt Sayısı: 3'), findsOneWidget);
 
-    for (final buton in ['Yeni Kayıt', 'Kaydet', 'Güncelle', 'Sil', 'Temizle']) {
+    for (final buton in ['Yeni Kayıt', 'Kaydet', 'Güncelle', 'Sil', 'İlk', 'Geri', 'İleri', 'Son', 'Ekranı Temizle']) {
       expect(find.text(buton), findsOneWidget);
     }
   });
@@ -250,8 +250,8 @@ void main() {
     await tester.ensureVisible(find.text('KAYA YAZILIM'));
     await tester.tap(find.text('KAYA YAZILIM'));
     await tester.pump();
-    await tester.ensureVisible(find.text('Temizle'));
-    await tester.tap(find.text('Temizle'));
+    await tester.ensureVisible(find.text('Ekranı Temizle'));
+    await tester.tap(find.text('Ekranı Temizle'));
     await tester.pump();
 
     expect(find.descendant(of: find.byType(TextField), matching: find.text('KAYA YAZILIM')), findsNothing);
@@ -330,5 +330,88 @@ void main() {
     // Diğer kayıtların şehri değişmemiş olmalı.
     expect(find.descendant(of: tablo, matching: find.text('İstanbul')), findsOneWidget);
     expect(find.descendant(of: tablo, matching: find.text('Elazığ')), findsOneWidget);
+  });
+
+  testWidgets('Küçük telefon ekranında (360 px) hiçbir şey taşmıyor', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+    tester.view.physicalSize = const Size(360, 3000);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    // Kayıt seçiliyken de (başlığın sağında "Aktif Kayıt Düzenleme" yazarken).
+    await tester.tap(find.text('İlk'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Üst çubukta firma adı ve alt başlık var', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+    expect(find.descendant(of: find.byType(AppBar), matching: find.text('MEGA İŞ ÇÖZÜMLERİ')), findsOneWidget);
+    expect(find.text('KURUMSAL KAYNAK & ADRES YÖNETİMİ'), findsOneWidget);
+  });
+
+  group('Kayıtlar arası gezinme', () {
+    /// Formdaki Kod alanının değeri.
+    String formdakiKod(WidgetTester tester) =>
+        tester.widget<TextField>(find.widgetWithText(TextField, 'Kod *')).controller!.text;
+
+    Future<void> bas(WidgetTester tester, String buton) async {
+      await tester.tap(find.text(buton));
+      await tester.pump();
+    }
+
+    testWidgets('İlk, İleri, Geri ve Son kayıtları sırayla forma getiriyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+
+      await bas(tester, 'İlk');
+      expect(formdakiKod(tester), '0001.001');
+      expect(find.text('Aktif Kayıt Düzenleme'), findsOneWidget);
+
+      await bas(tester, 'İleri');
+      expect(formdakiKod(tester), '24343434');
+
+      await bas(tester, 'Son');
+      expect(formdakiKod(tester), '56565656');
+
+      await bas(tester, 'Geri');
+      expect(formdakiKod(tester), '24343434');
+    });
+
+    testWidgets('Seçim yokken İleri ilk, Geri son kayda gidiyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+
+      await bas(tester, 'İleri');
+      expect(formdakiKod(tester), '0001.001');
+
+      await bas(tester, 'Ekranı Temizle');
+      expect(find.text('Yeni Kayıt Girişi'), findsOneWidget);
+      await bas(tester, 'Geri');
+      expect(formdakiKod(tester), '56565656');
+    });
+
+    testWidgets('Listenin sonunda ve başında uyarı veriyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+
+      await bas(tester, 'Son');
+      await bas(tester, 'İleri');
+      expect(find.text('Son kayıttasınız.'), findsOneWidget);
+      expect(formdakiKod(tester), '56565656');
+
+      await bas(tester, 'İlk');
+      await bas(tester, 'Geri');
+      expect(find.text('İlk kayıttasınız.'), findsOneWidget);
+    });
+
+    testWidgets('Arama yapılınca sadece görünen kayıtlar arasında geziyor', (WidgetTester tester) async {
+      await uygulamayiAc(tester);
+
+      await tester.enterText(find.byKey(const Key('tabloArama')), 'elazığ');
+      await tester.pump();
+
+      await bas(tester, 'İlk');
+      expect(formdakiKod(tester), '24343434');
+      await bas(tester, 'Son');
+      expect(formdakiKod(tester), '56565656');
+    });
   });
 }
