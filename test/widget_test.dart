@@ -70,4 +70,35 @@ void main() {
 
     expect(find.text('SİLİNECEK'), findsNothing);
   });
+
+  testWidgets('Tablodan seçilen kayıt forma doluyor ve Güncelle değiştiriyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await tester.ensureVisible(find.text('KAYA YAZILIM'));
+    await tester.tap(find.text('KAYA YAZILIM'));
+    await tester.pump();
+
+    expect(find.descendant(of: find.byType(TextField), matching: find.text('KAYA YAZILIM')), findsOneWidget);
+    expect(find.descendant(of: find.byType(TextField), matching: find.text('24343434')), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Şehir'), 'İzmir');
+    await tester.ensureVisible(find.text('Güncelle'));
+    await tester.tap(find.text('Güncelle'));
+    await tester.pump();
+
+    expect(find.text('Kayıt güncellendi.'), findsOneWidget);
+    final tablo = find.byType(DataTable);
+    expect(find.descendant(of: tablo, matching: find.text('İzmir')), findsOneWidget);
+    expect(find.descendant(of: tablo, matching: find.text('Elazığ')), findsOneWidget);
+    expect(find.descendant(of: tablo, matching: find.text('KAYA YAZILIM')), findsOneWidget);
+  });
+
+  testWidgets('Kayıt seçilmeden Güncelle uyarı veriyor', (WidgetTester tester) async {
+    await tester.pumpWidget(const KurumsalMobilApp());
+
+    await tester.tap(find.text('Güncelle'));
+    await tester.pump();
+
+    expect(find.text('Güncellemek için tablodan bir kayıt seçin.'), findsOneWidget);
+  });
 }

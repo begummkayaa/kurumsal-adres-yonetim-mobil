@@ -44,6 +44,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
   final _telefonController = TextEditingController();
   final _epostaController = TextEditingController();
   final _kodFocus = FocusNode();
+  int? _seciliIndex;
 
   @override
   void dispose() {
@@ -67,6 +68,36 @@ class _AnaSayfaState extends State<AnaSayfa> {
     for (final c in [_kodController, _adController, _adresController, _sehirController, _telefonController, _epostaController]) {
       c.clear();
     }
+    setState(() => _seciliIndex = null);
+  }
+
+  void _kaydiSec(int index) {
+    final k = _kayitlar[index];
+    _kodController.text = k.kod;
+    _adController.text = k.ad;
+    _adresController.text = k.adres;
+    _sehirController.text = k.sehir;
+    _telefonController.text = k.telefon;
+    _epostaController.text = k.eposta;
+    setState(() => _seciliIndex = index);
+  }
+
+  /// Formdaki bilgilerden bir Adres oluşturur; Kod veya Ad boşsa uyarı gösterip null döner.
+  Adres? _formdanAdres() {
+    final kod = _kodController.text.trim();
+    final ad = _adController.text.trim();
+    if (kod.isEmpty || ad.isEmpty) {
+      _mesajGoster('Kod ve Ad alanları boş bırakılamaz.', hata: true);
+      return null;
+    }
+    return Adres(
+      kod: kod,
+      ad: ad,
+      adres: _adresController.text.trim(),
+      sehir: _sehirController.text.trim(),
+      telefon: _telefonController.text.trim(),
+      eposta: _epostaController.text.trim(),
+    );
   }
 
   void _yeniKayit() {
@@ -75,25 +106,26 @@ class _AnaSayfaState extends State<AnaSayfa> {
   }
 
   void _kaydet() {
-    final kod = _kodController.text.trim();
-    final ad = _adController.text.trim();
-    if (kod.isEmpty || ad.isEmpty) {
-      _mesajGoster('Kod ve Ad alanları boş bırakılamaz.', hata: true);
-      return;
-    }
+    final yeni = _formdanAdres();
+    if (yeni == null) return;
 
-    setState(() {
-      _kayitlar.add(Adres(
-        kod: kod,
-        ad: ad,
-        adres: _adresController.text.trim(),
-        sehir: _sehirController.text.trim(),
-        telefon: _telefonController.text.trim(),
-        eposta: _epostaController.text.trim(),
-      ));
-    });
+    setState(() => _kayitlar.add(yeni));
     _formuBosalt();
     _mesajGoster('Kayıt eklendi.');
+  }
+
+  void _guncelle() {
+    final index = _seciliIndex;
+    if (index == null) {
+      _mesajGoster('Güncellemek için tablodan bir kayıt seçin.', hata: true);
+      return;
+    }
+    final guncel = _formdanAdres();
+    if (guncel == null) return;
+
+    setState(() => _kayitlar[index] = guncel);
+    _formuBosalt();
+    _mesajGoster('Kayıt güncellendi.');
   }
 
   @override
@@ -135,7 +167,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
               children: [
                 _buildIslemButonu('Yeni Kayıt', Colors.blue, Icons.add, _yeniKayit),
                 _buildIslemButonu('Kaydet', Colors.green, Icons.save, _kaydet),
-                _buildIslemButonu('Güncelle', Colors.orange, Icons.edit, () {}),
+                _buildIslemButonu('Güncelle', Colors.orange, Icons.edit, _guncelle),
                 _buildIslemButonu('Sil', Colors.red, Icons.delete, () {}),
                 _buildIslemButonu('Temizle', Colors.teal, Icons.cleaning_services, () {}),
               ],
@@ -168,6 +200,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
                 headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 dataRowMinHeight: 60,
                 dataRowMaxHeight: 60,
+                showCheckboxColumn: false,
                 columns: const [
                   DataColumn(label: Text('KOD')),
                   DataColumn(label: Text('AD')),
@@ -175,15 +208,20 @@ class _AnaSayfaState extends State<AnaSayfa> {
                   DataColumn(label: Text('TELEFON')),
                   DataColumn(label: Text('E-POSTA')),
                 ],
-                rows: _kayitlar
-                    .map((k) => DataRow(cells: [
-                          DataCell(Text(k.kod)),
-                          DataCell(Text(k.ad)),
-                          DataCell(Text(k.sehir)),
-                          DataCell(Text(k.telefon)),
-                          DataCell(Text(k.eposta)),
-                        ]))
-                    .toList(),
+                rows: [
+                  for (var i = 0; i < _kayitlar.length; i++)
+                    DataRow(
+                      selected: i == _seciliIndex,
+                      onSelectChanged: (_) => _kaydiSec(i),
+                      cells: [
+                        DataCell(Text(_kayitlar[i].kod)),
+                        DataCell(Text(_kayitlar[i].ad)),
+                        DataCell(Text(_kayitlar[i].sehir)),
+                        DataCell(Text(_kayitlar[i].telefon)),
+                        DataCell(Text(_kayitlar[i].eposta)),
+                      ],
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 40),
