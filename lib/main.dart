@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'models/adres.dart';
+import 'pages/detayli_adres_raporu.dart';
+import 'pages/ozet_adres_raporu.dart';
 import 'services/adres_deposu.dart';
 import 'utils/dogrulama.dart';
 
@@ -72,6 +74,12 @@ class _AnaSayfaState extends State<AnaSayfa> {
     _epostaController.dispose();
     _kodFocus.dispose();
     super.dispose();
+  }
+
+  /// Menüyü kapatıp verilen sayfayı açar.
+  void _sayfayaGit(Widget sayfa) {
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (_) => sayfa));
   }
 
   void _mesajGoster(String mesaj, {bool hata = false}) {
@@ -206,8 +214,8 @@ class _AnaSayfaState extends State<AnaSayfa> {
               leading: const Icon(Icons.analytics),
               title: const Text('Raporlar'),
               children: [
-                ListTile(title: const Text('Özet Adres Raporu'), contentPadding: const EdgeInsets.only(left: 50), onTap: () {}),
-                ListTile(title: const Text('Detaylı Adres Raporu'), contentPadding: const EdgeInsets.only(left: 50), onTap: () {}),
+                ListTile(title: const Text('Özet Adres Raporu'), contentPadding: const EdgeInsets.only(left: 50), onTap: () => _sayfayaGit(OzetAdresRaporu(kayitlar: List.unmodifiable(_kayitlar)))),
+                ListTile(title: const Text('Detaylı Adres Raporu'), contentPadding: const EdgeInsets.only(left: 50), onTap: () => _sayfayaGit(DetayliAdresRaporu(kayitlar: List.unmodifiable(_kayitlar)))),
                 ListTile(title: const Text('TCMB Kur Arşivi'), contentPadding: const EdgeInsets.only(left: 50), onTap: () {}),
               ],
             ),
