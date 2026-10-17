@@ -14,4 +14,24 @@ class Adres {
     this.telefon = '',
     this.eposta = '',
   });
+
+  factory Adres.fromJson(Map<String, dynamic> json) {
+    return Adres(
+      kod: json['kod'] as String,
+      ad: json['ad'] as String,
+      adres: json['adres'] as String? ?? '',
+      sehir: json['sehir'] as String? ?? '',
+      telefon: json['telefon'] as String? ?? '',
+      eposta: json['eposta'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'kod': kod,
+        'ad': ad,
+        'adres': adres,
+        'sehir': sehir,
+        'telefon': telefon,
+        'eposta': eposta,
+      };
 }

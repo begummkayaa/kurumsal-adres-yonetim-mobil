@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'models/adres.dart';
+import 'services/adres_deposu.dart';
 import 'utils/dogrulama.dart';
 
 void main() {
@@ -32,11 +33,9 @@ class AnaSayfa extends StatefulWidget {
 }
 
 class _AnaSayfaState extends State<AnaSayfa> {
-  final List<Adres> _kayitlar = [
-    const Adres(kod: '0001.001', ad: 'MEGA İŞ ÇÖZÜMLERİ', sehir: 'İstanbul', telefon: '+90 216 210 00 10', eposta: 'mega@mega.com'),
-    const Adres(kod: '24343434', ad: 'KAYA YAZILIM', sehir: 'Elazığ', telefon: '0212 392 32 22', eposta: 'kaya@gmail.com'),
-    const Adres(kod: '56565656', ad: 'FIRAT TEKNOLOJİ', sehir: 'Elazığ', telefon: '0424 237 00 00', eposta: 'info@firat.edu.tr'),
-  ];
+  final _depo = AdresDeposu();
+  List<Adres> _kayitlar = [];
+  bool _yukleniyor = true;
 
   final _kodController = TextEditingController();
   final _adController = TextEditingController();
@@ -47,6 +46,21 @@ class _AnaSayfaState extends State<AnaSayfa> {
   final _kodFocus = FocusNode();
   final _formKey = GlobalKey<FormState>();
   int? _seciliIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _kayitlariYukle();
+  }
+
+  Future<void> _kayitlariYukle() async {
+    final kayitlar = await _depo.yukle();
+    if (!mounted) return;
+    setState(() {
+      _kayitlar = kayitlar;
+      _yukleniyor = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -122,6 +136,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
     if (yeni == null) return;
 
     setState(() => _kayitlar.add(yeni));
+    _depo.kaydet(_kayitlar);
     _formuBosalt();
     _mesajGoster('Kayıt eklendi.');
   }
@@ -136,6 +151,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
     if (guncel == null) return;
 
     setState(() => _kayitlar[index] = guncel);
+    _depo.kaydet(_kayitlar);
     _formuBosalt();
     _mesajGoster('Kayıt güncellendi.');
   }
@@ -166,6 +182,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
     if (onay != true || !mounted) return;
 
     setState(() => _kayitlar.removeAt(index));
+    _depo.kaydet(_kayitlar);
     _formuBosalt();
     _mesajGoster('Kayıt silindi.');
   }
@@ -242,37 +259,40 @@ class _AnaSayfaState extends State<AnaSayfa> {
             const SizedBox(height: 16),
             
             // Sağa Sola Kaydırılabilir Tablo
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor: WidgetStateProperty.all(const Color(0xFF0F172A)),
-                headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                dataRowMinHeight: 60,
-                dataRowMaxHeight: 60,
-                showCheckboxColumn: false,
-                columns: const [
-                  DataColumn(label: Text('KOD')),
-                  DataColumn(label: Text('AD')),
-                  DataColumn(label: Text('ŞEHİR')),
-                  DataColumn(label: Text('TELEFON')),
-                  DataColumn(label: Text('E-POSTA')),
-                ],
-                rows: [
-                  for (var i = 0; i < _kayitlar.length; i++)
-                    DataRow(
-                      selected: i == _seciliIndex,
-                      onSelectChanged: (_) => _kaydiSec(i),
-                      cells: [
-                        DataCell(Text(_kayitlar[i].kod)),
-                        DataCell(Text(_kayitlar[i].ad)),
-                        DataCell(Text(_kayitlar[i].sehir)),
-                        DataCell(Text(_kayitlar[i].telefon)),
-                        DataCell(Text(_kayitlar[i].eposta)),
-                      ],
-                    ),
-                ],
+            if (_yukleniyor)
+              const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(const Color(0xFF0F172A)),
+                  headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  dataRowMinHeight: 60,
+                  dataRowMaxHeight: 60,
+                  showCheckboxColumn: false,
+                  columns: const [
+                    DataColumn(label: Text('KOD')),
+                    DataColumn(label: Text('AD')),
+                    DataColumn(label: Text('ŞEHİR')),
+                    DataColumn(label: Text('TELEFON')),
+                    DataColumn(label: Text('E-POSTA')),
+                  ],
+                  rows: [
+                    for (var i = 0; i < _kayitlar.length; i++)
+                      DataRow(
+                        selected: i == _seciliIndex,
+                        onSelectChanged: (_) => _kaydiSec(i),
+                        cells: [
+                          DataCell(Text(_kayitlar[i].kod)),
+                          DataCell(Text(_kayitlar[i].ad)),
+                          DataCell(Text(_kayitlar[i].sehir)),
+                          DataCell(Text(_kayitlar[i].telefon)),
+                          DataCell(Text(_kayitlar[i].eposta)),
+                        ],
+                      ),
+                  ],
+                ),
               ),
-            ),
             const SizedBox(height: 40),
           ],
         ),

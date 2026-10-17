@@ -1,11 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mega_mobil_proje/main.dart';
 
+/// Uygulamayı açar ve kayıtların yüklenmesini bekler.
+Future<void> uygulamayiAc(WidgetTester tester) async {
+  await tester.pumpWidget(const KurumsalMobilApp());
+  await tester.pumpAndSettle();
+}
+
 void main() {
+  // Her test boş bir depoyla, yani örnek kayıtlarla başlar.
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('Eklenen kayıt uygulama yeniden açılınca duruyor', (WidgetTester tester) async {
+    await uygulamayiAc(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Kod *'), '88888');
+    await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'KALICI FİRMA');
+    await tester.tap(find.text('Kaydet'));
+    await tester.pump();
+
+    // Uygulamayı kapatıp yeniden aç.
+    await tester.pumpWidget(const SizedBox());
+    await uygulamayiAc(tester);
+
+    expect(find.descendant(of: find.byType(DataTable), matching: find.text('KALICI FİRMA')), findsOneWidget);
+  });
+
   testWidgets('Ana sayfa başlık, form ve tabloyla açılıyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     expect(find.text('MEGA İŞ ÇÖZÜMLERİ'), findsWidgets);
     expect(find.text('ADRES ANA BİLGİLERİ'), findsOneWidget);
@@ -17,7 +42,7 @@ void main() {
   });
 
   testWidgets('Kayıt listesi tabloda gösteriliyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     expect(find.text('KAYA YAZILIM'), findsOneWidget);
     expect(find.text('FIRAT TEKNOLOJİ'), findsOneWidget);
@@ -25,7 +50,7 @@ void main() {
   });
 
   testWidgets('Formda E-posta dahil tüm alanlar var ve yazılabiliyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     for (final alan in ['Kod *', 'Ad *', 'Adres', 'Şehir', 'Telefon', 'E-posta']) {
       expect(find.widgetWithText(TextField, alan), findsOneWidget);
@@ -36,7 +61,7 @@ void main() {
   });
 
   testWidgets('Kaydet formdaki bilgiyi tabloya ekliyor ve formu boşaltıyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.enterText(find.widgetWithText(TextField, 'Kod *'), '99999');
     await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'YENİ FİRMA');
@@ -51,7 +76,7 @@ void main() {
   });
 
   testWidgets('Kod veya Ad boşsa Kaydet kayıt eklemiyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'KODSUZ FİRMA');
     await tester.tap(find.text('Kaydet'));
@@ -63,7 +88,7 @@ void main() {
   });
 
   testWidgets('Aynı kodla ikinci kayıt eklenemiyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.enterText(find.widgetWithText(TextField, 'Kod *'), '24343434');
     await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'KOPYA FİRMA');
@@ -75,7 +100,7 @@ void main() {
   });
 
   testWidgets('Hatalı telefon ve e-posta ile kayıt eklenemiyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.enterText(find.widgetWithText(TextField, 'Kod *'), '77777');
     await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'HATALI FİRMA');
@@ -91,7 +116,7 @@ void main() {
   });
 
   testWidgets('Yeni Kayıt formu boşaltıyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.enterText(find.widgetWithText(TextField, 'Ad *'), 'SİLİNECEK');
     await tester.tap(find.text('Yeni Kayıt'));
@@ -101,7 +126,7 @@ void main() {
   });
 
   testWidgets('Tablodan seçilen kayıt forma doluyor ve Güncelle değiştiriyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.ensureVisible(find.text('KAYA YAZILIM'));
     await tester.tap(find.text('KAYA YAZILIM'));
@@ -124,7 +149,7 @@ void main() {
   });
 
   testWidgets('Kayıt seçilmeden Güncelle uyarı veriyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.tap(find.text('Güncelle'));
     await tester.pump();
@@ -142,7 +167,7 @@ void main() {
   }
 
   testWidgets('Sil onaylanınca seçili kaydı siliyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await kaydiSecVeSileBas(tester, 'KAYA YAZILIM');
     expect(find.text('Kaydı Sil'), findsOneWidget);
@@ -156,7 +181,7 @@ void main() {
   });
 
   testWidgets('Sil iptal edilince kayıt kalıyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await kaydiSecVeSileBas(tester, 'KAYA YAZILIM');
     await tester.tap(find.text('Vazgeç'));
@@ -166,7 +191,7 @@ void main() {
   });
 
   testWidgets('Kayıt seçilmeden Sil uyarı veriyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.tap(find.text('Sil'));
     await tester.pump();
@@ -175,7 +200,7 @@ void main() {
   });
 
   testWidgets('Temizle formu boşaltıyor ve seçimi kaldırıyor', (WidgetTester tester) async {
-    await tester.pumpWidget(const KurumsalMobilApp());
+    await uygulamayiAc(tester);
 
     await tester.ensureVisible(find.text('KAYA YAZILIM'));
     await tester.tap(find.text('KAYA YAZILIM'));
