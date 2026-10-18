@@ -1,6 +1,21 @@
-# Kurumsal Adres Yönetimi – Mobil
+# 📱 Kurumsal Adres Yönetimi – Mobil
 
-Firma adres kayıtlarını eklemek, güncellemek, silmek ve raporlamak için Flutter ile geliştirilmiş mobil uygulama. [Web](https://github.com/begummkayaa/kurumsal-adres-yonetim-web) ve [masaüstü](https://github.com/begummkayaa/kurumsal-adres-yonetim-masaustu) sürümlerinin mobil karşılığıdır: ekranlar ve raporlar web sürümüyle aynı yapıdadır ve **üç sürüm aynı SQL Server veritabanını kullanır**.
+Firma adres kayıtlarını eklemek, güncellemek, silmek ve raporlamak için **Flutter** ile geliştirilmiş mobil uygulama. [🌐 Web](https://github.com/begummkayaa/kurumsal-adres-yonetim-web) ve [🖥️ masaüstü](https://github.com/begummkayaa/kurumsal-adres-yonetim-masaustu) sürümlerinin mobil karşılığıdır: ekranlar ve raporlar web sürümüyle aynı yapıdadır ve **üç sürüm aynı SQL Server veritabanını kullanır**.
+
+---
+
+## 📑 İçindekiler
+
+- [Mimari](#-mimari)
+- [Özellikler](#-özellikler)
+- [Kurulum ve Çalıştırma](#-kurulum-ve-çalıştırma)
+- [Testler](#-testler)
+- [Proje Yapısı](#-proje-yapısı)
+- [Kullanılan Paketler](#-kullanılan-paketler)
+
+---
+
+## 🧩 Mimari
 
 ```
 Flutter uygulaması  ──HTTP/JSON──▶  MegaApi (ASP.NET Core)  ──▶  SQL Server
@@ -9,36 +24,41 @@ Web (ASP.NET Web Forms) ──────────────────�
 Masaüstü (WinForms) ─────────────────────────────────────────────────┘
 ```
 
-Flutter, SQL Server'a doğrudan bağlanamadığı için veritabanına `api/MegaApi` üzerinden erişir.
+> ℹ️ Flutter, SQL Server'a doğrudan bağlanamadığı için veritabanına `api/MegaApi` üzerinden erişir.
 
-## Özellikler
+---
 
-**Adres kayıtları**
-- 15 alan: Kod, Ad, Adres, Semt, Şehir, Ülke, Posta Kodu, Telefon, Fax, Vergi Dairesi, Vergi No, Mail, Web Sitesi, Yetkili 1, Yetkili 2
-- Kayıt ekleme, listeden seçip güncelleme ve onaylı silme; değişiklikler web ve masaüstü sürümlerinde de görünür
-- **İlk / Geri / İleri / Son** butonlarıyla kayıtlar arasında gezinme
-- Form doğrulama: Kod ve Ad zorunlu, kod benzersiz; telefon, fax, posta kodu, vergi no, e-posta ve web adresi format kontrolü; alanlara veritabanı sütun uzunluğundan uzun yazılamaz
-- Tüm alanlarda, Türkçe karakter duyarlı arama (ör. `istanbul` → `İstanbul`)
-- Geniş ekranda form iki sütun, telefonda tek sütun
+## ✨ Özellikler
 
-**Raporlar** (sol menü → Raporlar)
-- **Özet Adres Raporu (Rapor 1):** Kod, Ad, Adres, Semt, Şehir, Telefon, E-posta
-- **Detaylı Adres Raporu (Rapor 2):** kayıtların tüm alanları
-- İki rapor da aranabilir ve **PDF olarak indirilebilir**. PDF'te Türkçe karakterler doğru görünür, detaylı rapor yatay sayfaya basılır.
-- **TCMB Döviz Arşivi:** ana sayfadaki **Güncel Kur Çek** butonuyla TCMB'den alınan dolar/euro kurlarının (efektif satış) listesi; web sürümüyle aynı arşivdir. Hafta sonu veya 15:30 öncesinde çekilen kur, durum sütununda "Geçmiş İş Günü Kuru" olarak belirtilir. **Otomatik Kur Servisi** açılırsa uygulama, arşivde o günün kuru yoksa açılışta kendisi çeker.
+### 📇 Adres Kayıtları
+- 🗂️ **15 alan:** Kod, Ad, Adres, Semt, Şehir, Ülke, Posta Kodu, Telefon, Fax, Vergi Dairesi, Vergi No, Mail, Web Sitesi, Yetkili 1, Yetkili 2
+- ✏️ Kayıt ekleme, listeden seçip güncelleme ve onaylı silme; değişiklikler web ve masaüstü sürümlerinde de görünür
+- ⏮️ **İlk / Geri / İleri / Son** butonlarıyla kayıtlar arasında gezinme
+- ✅ **Form doğrulama:** Kod ve Ad zorunlu, kod benzersiz; telefon, fax, posta kodu, vergi no, e-posta ve web adresi format kontrolü; alanlara veritabanı sütun uzunluğundan uzun yazılamaz
+- 🔍 Tüm alanlarda, Türkçe karakter duyarlı arama (ör. `istanbul` → `İstanbul`)
+- 📐 Geniş ekranda form iki sütun, telefonda tek sütun
 
-## Kurulum ve Çalıştırma
+### 📊 Raporlar (sol menü → Raporlar)
+- 📄 **Özet Adres Raporu (Rapor 1):** Kod, Ad, Adres, Semt, Şehir, Telefon, E-posta
+- 📋 **Detaylı Adres Raporu (Rapor 2):** kayıtların tüm alanları
+- 📥 İki rapor da aranabilir ve **PDF olarak indirilebilir**. PDF'te Türkçe karakterler doğru görünür, detaylı rapor yatay sayfaya basılır.
+- 💱 **TCMB Döviz Arşivi:** ana sayfadaki **Güncel Kur Çek** butonuyla TCMB'den alınan dolar/euro kurlarının (efektif satış) listesi; web sürümüyle aynı arşivdir. Hafta sonu veya 15:30 öncesinde çekilen kur, durum sütununda "Geçmiş İş Günü Kuru" olarak belirtilir. 🔄 **Otomatik Kur Servisi** açılırsa uygulama, arşivde o günün kuru yoksa açılışta kendisi çeker.
 
-Gereksinimler: [Flutter](https://docs.flutter.dev/get-started/install) (Dart SDK ^3.13), [.NET 10 SDK](https://dotnet.microsoft.com/download) ve web/masaüstü sürümlerinin kullandığı SQL Server veritabanı.
+---
 
-**1. API'yi başlatın** (veritabanı bağlantısı `api/MegaApi/appsettings.json` içindedir):
+## 🚀 Kurulum ve Çalıştırma
+
+**🧰 Gereksinimler:** [Flutter](https://docs.flutter.dev/get-started/install) (Dart SDK ^3.13), [.NET 10 SDK](https://dotnet.microsoft.com/download) ve web/masaüstü sürümlerinin kullandığı SQL Server veritabanı.
+
+### 1️⃣ API'yi Başlatın
+Veritabanı bağlantısı `api/MegaApi/appsettings.json` içindedir.
 
 ```bash
 cd api/MegaApi
 dotnet run          # http://localhost:5080
 ```
 
-**2. Uygulamayı çalıştırın:**
+### 2️⃣ Uygulamayı Çalıştırın
 
 ```bash
 flutter pub get
@@ -46,13 +66,14 @@ flutter run -d chrome    # tarayıcıda (API: localhost:5080)
 flutter run              # Android emülatöründe (API: 10.0.2.2:5080)
 ```
 
-Gerçek telefonda telefon ve bilgisayar aynı Wi-Fi'de olmalı; API adresi olarak bilgisayarın yerel IP'si verilir (Windows'ta `ipconfig` ile öğrenilir). Windows Güvenlik Duvarı'nın 5080 portuna izin vermesi gerekebilir.
+### 📲 Gerçek Telefonda Çalıştırma
+Telefon ve bilgisayar aynı Wi-Fi'de olmalı; API adresi olarak bilgisayarın yerel IP'si verilir (Windows'ta `ipconfig` ile öğrenilir). 🛡️ Windows Güvenlik Duvarı'nın 5080 portuna izin vermesi gerekebilir.
 
 ```bash
 flutter run --dart-define=API_URL=http://192.168.1.20:5080
 ```
 
-### API uçları
+### 🔌 API Uçları
 
 | Yöntem | Adres | İşlem |
 |---|---|---|
@@ -64,15 +85,19 @@ flutter run --dart-define=API_URL=http://192.168.1.20:5080
 | POST | `/api/kurlar/guncel` | TCMB'den güncel kuru çek ve arşive ekle |
 | GET | `/api/saglik` | API çalışıyor mu |
 
-## Testler
+---
+
+## 🧪 Testler
 
 ```bash
 flutter test
 ```
 
-Testler; doğrulama kurallarını, aramayı, ana ekrandaki tüm işlemleri ve gezinmeyi, API hatalarını (sunucu kapalı, kod çakışması), küçük ekranda taşma olmamasını, raporları, PDF çıktısını ve kur arşivini kapsar. Testler bellekte çalışan sahte bir API ile çalışır; veritabanı veya internet gerektirmez.
+Testler; doğrulama kurallarını, aramayı, ana ekrandaki tüm işlemleri ve gezinmeyi, API hatalarını (sunucu kapalı, kod çakışması), küçük ekranda taşma olmamasını, raporları, PDF çıktısını ve kur arşivini kapsar. 💡 Testler bellekte çalışan sahte bir API ile çalışır; veritabanı veya internet gerektirmez.
 
-## Proje Yapısı
+---
+
+## 📂 Proje Yapısı
 
 ```
 api/MegaApi/                      ASP.NET Core API (veritabanı erişimi, TCMB kur çekme)
@@ -105,13 +130,15 @@ lib/
 assets/fonts/                     PDF için Roboto (SIL Open Font License)
 ```
 
-## Kullanılan Paketler
+---
+
+## 📦 Kullanılan Paketler
 
 | Paket | Kullanım |
 |---|---|
-| [http](https://pub.dev/packages/http) | API ile iletişim |
-| [shared_preferences](https://pub.dev/packages/shared_preferences) | Cihaza özel ayarlar |
-| [pdf](https://pub.dev/packages/pdf) | PDF rapor oluşturma |
-| [printing](https://pub.dev/packages/printing) | PDF'i paylaşma / indirme |
+| 🌐 [http](https://pub.dev/packages/http) | API ile iletişim |
+| 💾 [shared_preferences](https://pub.dev/packages/shared_preferences) | Cihaza özel ayarlar |
+| 📄 [pdf](https://pub.dev/packages/pdf) | PDF rapor oluşturma |
+| 🖨️ [printing](https://pub.dev/packages/printing) | PDF'i paylaşma / indirme |
 
-API: [Microsoft.Data.SqlClient](https://www.nuget.org/packages/Microsoft.Data.SqlClient) ve [Dapper](https://www.nuget.org/packages/Dapper).
+**🔗 API:** [Microsoft.Data.SqlClient](https://www.nuget.org/packages/Microsoft.Data.SqlClient) ve [Dapper](https://www.nuget.org/packages/Dapper).
