@@ -1,6 +1,6 @@
 # 📱 Kurumsal Adres Yönetimi – Mobil
 
-Firma adres kayıtlarını eklemek, güncellemek, silmek ve raporlamak için **Flutter** ile geliştirilmiş mobil uygulama. [🌐 Web](https://github.com/begummkayaa/kurumsal-adres-yonetim-web) ve [🖥️ masaüstü](https://github.com/begummkayaa/kurumsal-adres-yonetim-masaustu) sürümlerinin mobil karşılığıdır: ekranlar ve raporlar web sürümüyle aynı yapıdadır ve **üç sürüm aynı SQL Server veritabanını kullanır**.
+Firma adres kayıtlarını eklemek, güncellemek, silmek ve raporlamak için **Flutter** ile geliştirilmiş mobil uygulama. [Web](https://github.com/begummkayaa/kurumsal-adres-yonetim-web) ve [masaüstü](https://github.com/begummkayaa/kurumsal-adres-yonetim-masaustu) sürümlerinin mobil karşılığıdır: ekranlar ve raporlar web sürümüyle aynı yapıdadır ve **üç sürüm aynı SQL Server veritabanını kullanır**.
 
 ---
 
